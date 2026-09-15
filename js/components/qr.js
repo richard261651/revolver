@@ -1,95 +1,15 @@
-// js/components/qr.js
-// Standalone SVG QR Code generator component for Operación Amatista
+// js/components/qr.js - Standard Valid QR Code Generator
 
 class QRComponent {
-  /**
-   * Generates a clean SVG representation of a QR code placeholder or target URL.
-   * Uses an SVG matrix rendering format with high-contrast dark/gold styling.
-   */
-  static renderSVG(text, size = 200) {
-    // Generate a deterministically styled QR pattern SVG for the given text/URL
-    // containing authentic QR alignment patterns and finder patterns
-    const numCells = 25;
-    const cellSize = size / numCells;
-
-    // Helper to generate deterministic binary matrix based on string
-    let matrix = [];
-    for (let r = 0; r < numCells; r++) {
-      matrix[r] = [];
-      for (let c = 0; c < numCells; c++) {
-        matrix[r][c] = false;
-      }
-    }
-
-    // Add Finder Patterns (Top-Left, Top-Right, Bottom-Left)
-    this.addFinderPattern(matrix, 0, 0);
-    this.addFinderPattern(matrix, 0, numCells - 7);
-    this.addFinderPattern(matrix, numCells - 7, 0);
-
-    // Alignment pattern
-    this.addBox(matrix, 16, 16, 5, true);
-    this.addBox(matrix, 17, 17, 3, false);
-    matrix[18][18] = true;
-
-    // Populate data cells deterministically using string character codes
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      hash = (hash << 5) - hash + text.charCodeAt(i);
-      hash |= 0;
-    }
-
-    for (let r = 0; r < numCells; r++) {
-      for (let c = 0; c < numCells; c++) {
-        // Skip finder pattern zones
-        if (
-          (r < 8 && c < 8) ||
-          (r < 8 && c >= numCells - 8) ||
-          (r >= numCells - 8 && c < 8) ||
-          (r >= 15 && r <= 19 && c >= 15 && c <= 19)
-        ) {
-          continue;
-        }
-
-        // Pseudo-random bit based on cell coordinate & text hash
-        const val = Math.abs(Math.sin((r * 31 + c * 17 + hash) * 0.1));
-        matrix[r][c] = val > 0.45;
-      }
-    }
-
-    // Build SVG path
-    let rectsHTML = '';
-    for (let r = 0; r < numCells; r++) {
-      for (let c = 0; c < numCells; c++) {
-        if (matrix[r][c]) {
-          const x = c * cellSize;
-          const y = r * cellSize;
-          rectsHTML += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(cellSize + 0.3).toFixed(1)}" height="${(cellSize + 0.3).toFixed(1)}" fill="#FFB703" />`;
-        }
-      }
-    }
+  static renderSVG(text, size = 220) {
+    const encodedUrl = encodeURIComponent(text);
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodedUrl}&color=ffb703&bgcolor=0d0e12&margin=2`;
 
     return `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" class="qr-svg-image">
-        <rect width="${size}" height="${size}" fill="#0D0D12" rx="12" stroke="#FFB703" stroke-width="2" />
-        <g fill="#FFB703">
-          ${rectsHTML}
-        </g>
-      </svg>
+      <img src="${qrApiUrl}" width="${size}" height="${size}" 
+           style="border-radius:12px; border: 2px solid var(--accent-gold); box-shadow: 0 0 20px rgba(255, 183, 3, 0.4); display: block;" 
+           alt="Escanea este Código QR para unirte" />
     `;
-  }
-
-  static addFinderPattern(matrix, row, col) {
-    this.addBox(matrix, row, col, 7, true);
-    this.addBox(matrix, row + 1, col + 1, 5, false);
-    this.addBox(matrix, row + 2, col + 2, 3, true);
-  }
-
-  static addBox(matrix, row, col, size, value) {
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size; c++) {
-        matrix[row + r][col + c] = value;
-      }
-    }
   }
 }
 
