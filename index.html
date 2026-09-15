@@ -534,6 +534,14 @@
       <div style="font-size: 0.78rem; color: #aaa; margin-top: 8px; word-break: break-all;" id="admin-url-text"></div>
     </div>
 
+    <div style="margin: 12px 0; background:rgba(255,255,255,0.04); border:1px solid #333; border-radius:10px; padding:12px; text-align:left;">
+      <div style="font-size:0.78rem; font-weight:800; color:var(--gold); margin-bottom:6px; letter-spacing:1px; text-transform:uppercase;">
+        ESTADO DE REGISTRO DE EQUIPOS EN SALA DE ESPERA:
+      </div>
+      <div id="admin-teams-status" style="font-size:0.82rem; color:#eee; display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+      </div>
+    </div>
+
     <button class="btn-secondary" onclick="adminResetAll()" style="margin-top:10px; background:rgba(255,51,102,0.15); border-color:var(--red); color:#ffccd5;">
       🔄 REINICIAR Y VOLVER A SALA DE ESPERA (GLOBAL)
     </button>
@@ -667,8 +675,8 @@
     </button>
   </div>
 
-  <!-- TABLA DE POSICIONES Y RESULTADOS EN VIVO PARA TODOS -->
-  <div class="panel" id="panel-leaderboard">
+  <!-- TABLA DE POSICIONES Y RESULTADOS EN VIVO (DESACTIVADA DURANTE EL JUEGO SEGÚN INDICACIÓN) -->
+  <div class="panel" id="panel-leaderboard" style="display:none;">
     <!-- BANNER DE GANADOR ACTUAL POR PUNTOS -->
     <div class="winner-banner">
       <div>
@@ -953,8 +961,8 @@
       }
     ];
 
-    let equipoActualId = "1";
-    let nombreEquipo = "EQUIPO 1";
+    let equipoActualId = null;
+    let nombreEquipo = "";
     let rondaActual = 0;
     let balasEnTambor = 1;
     let corazonesRestantes = 1;
@@ -987,7 +995,26 @@
       localStorage.setItem('revolver_teams_live_3v', JSON.stringify(liveTeamsState));
     }
 
+    function updateAdminTeamsStatus() {
+      const container = document.getElementById('admin-teams-status');
+      if (!container) return;
+      let html = '';
+      for (let i = 1; i <= 6; i++) {
+        const team = liveTeamsState[String(i)] || {};
+        const isOccupied = Boolean(team.occupied);
+        const color = isOccupied ? 'var(--green)' : '#777';
+        const statusText = isOccupied ? '● REGISTRADO' : '○ Vacío';
+        html += `
+          <div style="background:rgba(0,0,0,0.35); padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+            <strong style="color:#fff;">Equipo ${i}:</strong> <span style="color:${color}; font-weight:bold;">${statusText}</span>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
     function renderTeamSelectOptions() {
+      updateAdminTeamsStatus();
       const sel = document.getElementById('sel-grupo');
       if (!sel) return;
 
@@ -1216,6 +1243,8 @@
 
         if (remotePhase === 'waiting' && isResetEvent) {
           liveTeamsState = defaultTeams();
+          equipoActualId = null;
+          nombreEquipo = "";
           updatedAny = true;
         }
 
@@ -1271,15 +1300,24 @@
             }
           } else if (remotePhase === 'playing') {
             if (resultsView) resultsView.style.display = 'none';
-            if (lobbyView && lobbyView.style.display !== 'none' && equipoActualId) {
-              audio.playChime();
-              lobbyView.style.display = 'none';
-              if (teamLogin) teamLogin.style.display = 'none';
-              if (gameView) gameView.style.display = 'block';
-              document.getElementById('lbl-grupo').innerText = `EQUIPO ${equipoActualId}`;
-              actualizarCorazonesUI();
-              actualizarTambor();
-              mostrarRonda();
+            if (equipoActualId) {
+              if (gameView && gameView.style.display === 'none') {
+                audio.playChime();
+                if (lobbyView) lobbyView.style.display = 'none';
+                if (teamLogin) teamLogin.style.display = 'none';
+                gameView.style.display = 'block';
+                document.getElementById('lbl-grupo').innerText = `EQUIPO ${equipoActualId}`;
+                actualizarCorazonesUI();
+                actualizarTambor();
+                mostrarRonda();
+              }
+            } else {
+              if (gameView) gameView.style.display = 'none';
+              if (lobbyView) lobbyView.style.display = 'none';
+              if (teamLogin && teamLogin.style.display === 'none') {
+                teamLogin.style.display = 'block';
+                renderTeamSelectOptions();
+              }
             }
           }
         }
@@ -1509,6 +1547,8 @@
     async function adminResetAll() {
       if (confirm("¿REINICIAR COMPLETAMENTE LA ACTIVIDAD? Todos los equipos volverán a la Sala de Espera.")) {
         detenerTimer();
+        equipoActualId = null;
+        nombreEquipo = "";
         lastResetCounter = Date.now();
         localStorage.setItem('revolver_last_reset', String(lastResetCounter));
 
@@ -1534,7 +1574,7 @@
         } catch (e) {}
 
         publishRealtimeUpdate({ type: 'RESET_ALL' });
-        alert("🔄 Actividad reiniciada con éxito. Todos los participantes han sido devueltos a la Sala de Espera.");
+        alert("🔄 Actividad reiniciada con éxito. Todos los participantes han sido devueltos a la vista inicial/espera.");
       }
     }
 
