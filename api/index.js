@@ -34,6 +34,7 @@ let gameState = {
   votes: {},
   allVotes: [{}, {}, {}],
   revealDone: false,
+  turnTeamId: "1",
   casos: CASOS_FIJOS
 };
 
@@ -83,6 +84,23 @@ app.post('/api/vote', (req, res) => {
   return res.json({ success: true });
 });
 
+// POST /api/turn/next
+app.post('/api/turn/next', (req, res) => {
+  const current = parseInt(gameState.turnTeamId || "1");
+  const next = current < 6 ? current + 1 : 1;
+  gameState.turnTeamId = String(next);
+  return res.json({ success: true, turnTeamId: gameState.turnTeamId });
+});
+
+// POST /api/turn/select
+app.post('/api/turn/select', (req, res) => {
+  const { teamId } = req.body;
+  if (teamId) {
+    gameState.turnTeamId = String(teamId);
+  }
+  return res.json({ success: true, turnTeamId: gameState.turnTeamId });
+});
+
 // POST /api/admin/:action
 app.post('/api/admin/:action', (req, res) => {
   const action = req.params.action;
@@ -90,6 +108,7 @@ app.post('/api/admin/:action', (req, res) => {
   if (action === 'start') {
     gameState.phase = 'game';
     gameState.currentCaseIndex = 0;
+    gameState.turnTeamId = "1";
     gameState.votes = {};
     gameState.allVotes = [{}, {}, {}];
     gameState.revealDone = false;
@@ -98,12 +117,14 @@ app.post('/api/admin/:action', (req, res) => {
   } else if (action === 'next') {
     if (gameState.currentCaseIndex < CASOS_FIJOS.length - 1) {
       gameState.currentCaseIndex++;
+      gameState.turnTeamId = "1";
       gameState.votes = {};
       gameState.revealDone = false;
     }
   } else if (action === 'prev') {
     if (gameState.currentCaseIndex > 0) {
       gameState.currentCaseIndex--;
+      gameState.turnTeamId = "1";
       gameState.votes = {};
       gameState.revealDone = false;
     }
@@ -114,6 +135,7 @@ app.post('/api/admin/:action', (req, res) => {
     } else {
       if (gameState.currentCaseIndex < CASOS_FIJOS.length - 1) {
         gameState.currentCaseIndex++;
+        gameState.turnTeamId = "1";
         gameState.votes = {};
         gameState.revealDone = false;
       }
@@ -126,6 +148,7 @@ app.post('/api/admin/:action', (req, res) => {
       votes: {},
       allVotes: [{}, {}, {}],
       revealDone: false,
+      turnTeamId: "1",
       casos: CASOS_FIJOS
     };
   }

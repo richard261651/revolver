@@ -394,6 +394,31 @@
         <p id="admin-case-desc" style="font-size:0.95rem; line-height:1.5; color:#fff;"></p>
       </div>
 
+      <!-- PANEL DE CONTROL DE TURNO (1 MINUTO) -->
+      <div style="background: linear-gradient(135deg, rgba(114,9,183,0.3) 0%, rgba(58,12,163,0.3) 100%); border: 1.5px solid var(--accent-purple); padding: 14px; border-radius: 14px; margin-top: 12px; text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:800; color:var(--accent-gold); font-size:0.92rem;">
+            🎤 TURNO DE HABLA (1 MINUTO POR GRUPO)
+          </span>
+          <span id="admin-turn-countdown" style="font-weight:900; background:var(--accent-gold); color:#000; padding:4px 10px; border-radius:8px; font-size:0.9rem;">
+            ⏱️ 60s
+          </span>
+        </div>
+
+        <div id="admin-turn-status" style="margin-top:8px; font-size:0.95rem; font-weight:700; color:#fff;">
+          📢 Turno actual: Equipo 1
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="btn-main" onclick="nextTurnServer()" style="padding:10px; font-size:0.82rem; margin-top:0;">
+            ⏭️ Ceder Turno al Siguiente Grupo
+          </button>
+          <button class="btn-secondary" onclick="resetTurnTimer()" style="padding:10px; font-size:0.82rem; margin-top:0; width:110px;">
+            🔄 60s
+          </button>
+        </div>
+      </div>
+
       <div style="margin-top: 12px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px;">
         <div class="timer-badge" id="admin-timer-val">⏱️ 45s</div>
         <div style="font-size:0.85rem; color:var(--text-muted);" id="admin-votes-count">
@@ -538,6 +563,39 @@
     }
 
     setInterval(syncVercelState, 1000);
+
+    let lastTurnTeamId = null;
+    let turnSecondsRemaining = 60;
+    let turnTimerInterval = null;
+
+    function startTurnTimer() {
+      if (turnTimerInterval) clearInterval(turnTimerInterval);
+      turnSecondsRemaining = 60;
+
+      turnTimerInterval = setInterval(() => {
+        if (turnSecondsRemaining > 0) {
+          turnSecondsRemaining--;
+        }
+        const text = turnSecondsRemaining > 0 ? `⏱️ ${turnSecondsRemaining}s` : `⏱️ ¡TIEMPO!`;
+        const adminEl = document.getElementById('admin-turn-countdown');
+        const studentEl = document.getElementById('student-turn-countdown');
+        if (adminEl) adminEl.textContent = text;
+        if (studentEl) studentEl.textContent = text;
+      }, 1000);
+    }
+
+    function resetTurnTimer() {
+      startTurnTimer();
+    }
+
+    async function nextTurnServer() {
+      try {
+        await fetch('/api/turn/next', { method: 'POST' });
+        syncVercelState();
+      } catch (e) {
+        console.warn("Error cediendo turno:", e);
+      }
+    }
 
     function startCaseTimer() {
       if (timerInterval) clearInterval(timerInterval);
@@ -759,7 +817,21 @@
             if (serverState.votes[tid]) countVotes++;
           });
 
-          document.getElementById('admin-votes-count').innerText = `${countVotes} / 4 Votos de Resistencia Recibidos`;
+          const votesCountEl = document.getElementById('admin-votes-count');
+          if (votesCountEl) {
+            let realTimeStatusHTML = `
+              <div style="font-weight:700; color:var(--accent-gold); font-size:0.9rem; margin-bottom:4px;">
+                🗳️ VOTACIÓN EN TIEMPO REAL (${countVotes}/4):
+              </div>
+              <div style="font-size:0.82rem; color:var(--text-muted); display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            `;
+            resistenciaTeams.forEach(tid => {
+              const hasVoted = !!serverState.votes[tid];
+              realTimeStatusHTML += `<div>• Equipo ${tid}: ${hasVoted ? '✅ <strong>Votó</strong> 🗳️' : '⏳ <em>Pensando...</em>'}</div>`;
+            });
+            realTimeStatusHTML += `</div>`;
+            votesCountEl.innerHTML = realTimeStatusHTML;
+          }
 
           const btnExpress = document.getElementById('btn-admin-express');
           const revealPanel = document.getElementById('admin-reveal-panel');
@@ -792,24 +864,83 @@
             } else {
               btnExpress.textContent = `🏆 ACTIVIDAD CONCLUIDA (REINICIAR)`;
 
-              let revealHTML = `
-                <div style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); padding:16px; border-radius:12px; color:#ffccd5; text-align:left;">
-                  <strong style="color:var(--accent-gold); font-size:1.15rem;">🏆 REVELACIÓN FINAL DE LA ACTIVIDAD:</strong><br><br>
-                  🚨 <strong>¡LOS 2 INFILTRADOS ENCUBIERTOS ERAN LOS EQUIPOS 3 Y 6!</strong><br><br>
-                  📊 <strong>VOTOS DE LA RESISTENCIA EN EL CASO FINAL:</strong><br>
-              `;
+              // CALCULAR GANADOR TIPO AMONG US
+              let totalAccurate = 0;
+              let totalPossible = 0;
 
-              resistenciaTeams.forEach(tid => {
-                const vTarget = serverState.votes[tid];
-                if (vTarget) {
-                  const isAccurate = INFILTRADOS.includes(vTarget);
-                  revealHTML += `<div>• Equipo ${tid} acusó al <strong>Equipo ${vTarget}</strong> ${isAccurate ? '🎯 (¡DESMASCARADO!)' : '❌ (Fallo)'}</div>`;
-                } else {
-                  revealHTML += `<div>• Equipo ${tid}: <em>Sin voto</em></div>`;
-                }
-              });
+              if (serverState.allVotes && Array.isArray(serverState.allVotes)) {
+                serverState.allVotes.forEach(caseVotes => {
+                  resistenciaTeams.forEach(tid => {
+                    const v = caseVotes[tid];
+                    if (v) {
+                      totalPossible++;
+                      if (INFILTRADOS.includes(v)) totalAccurate++;
+                    }
+                  });
+                });
+              } else {
+                resistenciaTeams.forEach(tid => {
+                  const v = serverState.votes[tid];
+                  if (v) {
+                    totalPossible++;
+                    if (INFILTRADOS.includes(v)) totalAccurate++;
+                  }
+                });
+              }
 
-              revealHTML += `</div>`;
+              const victoriaResistencia = totalAccurate >= 2;
+
+              let revealHTML = '';
+              if (victoriaResistencia) {
+                revealHTML = `
+                  <div style="background: rgba(6,214,160,0.18); border: 2.5px solid var(--accent-green); padding: 18px; border-radius: 16px; color: #fff; text-align: center; box-shadow: 0 0 25px rgba(6,214,160,0.3);">
+                    <div style="font-size: 2.2rem; margin-bottom: 4px;">🎉 🏆 🚀</div>
+                    <h2 style="color: var(--accent-green); font-size: 1.35rem; font-weight: 900; text-transform: uppercase;">
+                      ¡VICTORIA DE LA RESISTENCIA!
+                    </h2>
+                    <p style="font-size: 0.88rem; color: #c7f9cc; margin-top: 4px;">
+                      La Resistencia logró desmascarar a los infiltrados del salón.
+                    </p>
+
+                    <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 14px; margin-top: 14px; text-align: left;">
+                      <strong style="color: var(--accent-gold);">🚨 INFILTRADOS EN EL AULA:</strong> Equipos 3 y 6.<br>
+                      <strong>🎯 ACIERTOS TOTALES EN VOTACIONES:</strong> ${totalAccurate} Aciertos de ${totalPossible} votos.<br><br>
+                      <div style="font-size:0.83rem; color:var(--text-muted);">
+                        ${resistenciaTeams.map(tid => {
+                          const vTarget = serverState.votes[tid];
+                          const isAcc = vTarget && INFILTRADOS.includes(vTarget);
+                          return `• Equipo ${tid} acusó al <strong>Equipo ${vTarget || 'Sin voto'}</strong> ${isAcc ? '🎯 (¡Desmascaró!)' : '❌ (Erró)'}`;
+                        }).join('<br>')}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              } else {
+                revealHTML = `
+                  <div style="background: rgba(239,35,60,0.2); border: 2.5px solid var(--accent-red); padding: 18px; border-radius: 16px; color: #fff; text-align: center; box-shadow: 0 0 25px rgba(239,35,60,0.4);">
+                    <div style="font-size: 2.2rem; margin-bottom: 4px;">😈 🤫 🎭</div>
+                    <h2 style="color: var(--accent-red); font-size: 1.35rem; font-weight: 900; text-transform: uppercase;">
+                      ¡VICTORIA DE LOS INFILTRADOS!
+                    </h2>
+                    <p style="font-size: 0.88rem; color: #ffccd5; margin-top: 4px;">
+                      Los Cómplices (Equipos 3 y 6) lograron manipular el debate y engañar al salón sin ser descubiertos.
+                    </p>
+
+                    <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 14px; margin-top: 14px; text-align: left;">
+                      <strong style="color: var(--accent-gold);">🚨 INFILTRADOS ENCUBIERTOS:</strong> Equipos 3 y 6.<br>
+                      <strong>🎯 ACIERTOS TOTALES DE LA RESISTENCIA:</strong> ${totalAccurate} Aciertos de ${totalPossible} votos.<br><br>
+                      <div style="font-size:0.83rem; color:#ffccd5;">
+                        ${resistenciaTeams.map(tid => {
+                          const vTarget = serverState.votes[tid];
+                          const isAcc = vTarget && INFILTRADOS.includes(vTarget);
+                          return `• Equipo ${tid} acusó al <strong>Equipo ${vTarget || 'Sin voto'}</strong> ${isAcc ? '🎯 (¡Desmascaró!)' : '❌ (Engañado)'}`;
+                        }).join('<br>')}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }
+
               revealPanel.innerHTML = revealHTML;
             }
           }
@@ -843,6 +974,63 @@
           document.getElementById('box-team-game').style.display = 'block';
 
           document.getElementById('client-header-title').innerText = `EQUIPO ${myTeamId} • VOCERO: ${myVocero.toUpperCase()}`;
+
+          // BANNER DE TURNO DE HABLA EN EL CLIENTE
+          const activeTurnTeam = serverState.turnTeamId || "1";
+          const isMyTurn = myTeamId === activeTurnTeam;
+          const activeTeamObj = serverState.joinedTeams ? serverState.joinedTeams[activeTurnTeam] : null;
+          const voceroName = activeTeamObj ? activeTeamObj.vocero : `Equipo ${activeTurnTeam}`;
+
+          let turnBannerHTML = '';
+          if (isMyTurn) {
+            turnBannerHTML = `
+              <div style="background: rgba(6,214,160,0.18); border: 2px solid var(--accent-green); padding: 14px; border-radius: 12px; margin-bottom: 12px; text-align: left;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:800; color:var(--accent-green); font-size:0.95rem;">
+                    🎤 ¡ES SU TURNO DE HABLAR ANTE LA CLASE!
+                  </span>
+                  <span id="student-turn-countdown" style="font-weight:900; background:var(--accent-green); color:#000; padding:4px 10px; border-radius:8px;">
+                    ⏱️ 60s
+                  </span>
+                </div>
+                <p style="font-size:0.83rem; color:#c7f9cc; margin-top:6px;">
+                  Tienen 1 minuto para dar su argumento oral. Al terminar, presionen para ceder el turno.
+                </p>
+                <button class="btn-express" onclick="nextTurnServer()" style="margin-top:10px; padding:10px; font-size:0.82rem;">
+                  👉 Ceder Turno al Siguiente Grupo
+                </button>
+              </div>
+            `;
+          } else {
+            turnBannerHTML = `
+              <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 12px; border-radius: 12px; margin-bottom: 12px; text-align: left;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.88rem; color:var(--text-muted);">
+                    👂 Hablando en clase: <strong style="color:#fff;">Equipo ${activeTurnTeam}</strong> <span style="font-size:0.78rem;">(Vocero: ${voceroName})</span>
+                  </span>
+                  <span id="student-turn-countdown" style="font-weight:800; color:var(--accent-gold); font-size:0.85rem;">
+                    ⏱️ 60s
+                  </span>
+                </div>
+              </div>
+            `;
+          }
+
+          let turnBannerEl = document.getElementById('client-turn-banner');
+          if (!turnBannerEl) {
+            turnBannerEl = document.createElement('div');
+            turnBannerEl.id = 'client-turn-banner';
+            const roleCard = document.getElementById('client-role-card');
+            if (roleCard && roleCard.parentNode) {
+              roleCard.parentNode.insertBefore(turnBannerEl, roleCard);
+            }
+          }
+          if (turnBannerEl) turnBannerEl.innerHTML = turnBannerHTML;
+
+          if (lastTurnTeamId !== activeTurnTeam) {
+            lastTurnTeamId = activeTurnTeam;
+            startTurnTimer();
+          }
 
           const roleCard = document.getElementById('client-role-card');
           const isImpostor = INFILTRADOS.includes(myTeamId);
@@ -914,11 +1102,43 @@
                   </div>
                 `;
               } else {
-                const isCorrect = INFILTRADOS.includes(myVote);
-                if (isCorrect) {
-                  feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(6,214,160,0.15); border:1.5px solid var(--accent-green); color:var(--accent-green); margin-top:14px;">🎯 ¡DESMASCARADO! El Equipo ${myVote} era un Infiltrado. Los Infiltrados eran los Equipos 3 y 6.</div>`;
+                let totalAccurate = 0;
+                let totalPossible = 0;
+                if (serverState.allVotes && Array.isArray(serverState.allVotes)) {
+                  serverState.allVotes.forEach(caseVotes => {
+                    resistenciaTeams.forEach(tid => {
+                      const v = caseVotes[tid];
+                      if (v) {
+                        totalPossible++;
+                        if (INFILTRADOS.includes(v)) totalAccurate++;
+                      }
+                    });
+                  });
                 } else {
-                  feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(239,35,60,0.15); border:1.5px solid var(--accent-red); color:#ff85a1; margin-top:14px;">❌ FALLASTE: El Equipo ${myVote} era un aliado. Los Infiltrados eran los Equipos 3 y 6.</div>`;
+                  resistenciaTeams.forEach(tid => {
+                    const v = serverState.votes[tid];
+                    if (v) {
+                      totalPossible++;
+                      if (INFILTRADOS.includes(v)) totalAccurate++;
+                    }
+                  });
+                }
+                const victoriaResistencia = totalAccurate >= 2;
+
+                if (victoriaResistencia) {
+                  feedbackBox.innerHTML = `
+                    <div class="waiting-box" style="background:rgba(6,214,160,0.18); border:2px solid var(--accent-green); color:var(--accent-green); margin-top:14px;">
+                      🏆 <strong>¡VICTORIA DE LA RESISTENCIA!</strong><br>
+                      <span style="font-size:0.85rem; color:#fff;">La Resistencia logró descubrir a los Infiltrados (Equipos 3 y 6). ¡Excelente trabajo!</span>
+                    </div>
+                  `;
+                } else {
+                  feedbackBox.innerHTML = `
+                    <div class="waiting-box" style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); color:#ffccd5; margin-top:14px;">
+                      😈 <strong>¡VICTORIA DE LOS INFILTRADOS!</strong><br>
+                      <span style="font-size:0.85rem; color:#fff;">Los Infiltrados (Equipos 3 y 6) lograron salirse con la suya y encubrir al agresor.</span>
+                    </div>
+                  `;
                 }
               }
             } else {

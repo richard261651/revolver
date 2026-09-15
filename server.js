@@ -158,6 +158,29 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // --- API TURN CONTROLS ---
+  if (pathname.startsWith('/api/turn/')) {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      const action = pathname.replace('/api/turn/', '');
+      if (action === 'next') {
+        const current = parseInt(gameState.turnTeamId || "1");
+        const next = current < 6 ? current + 1 : 1;
+        gameState.turnTeamId = String(next);
+      } else if (action === 'select') {
+        try {
+          const parsed = JSON.parse(body || '{}');
+          if (parsed.teamId) gameState.turnTeamId = String(parsed.teamId);
+        } catch (e) {}
+      }
+      broadcastState();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, turnTeamId: gameState.turnTeamId }));
+    });
+    return;
+  }
+
   // --- API ADMIN CONTROLS ---
   if (pathname.startsWith('/api/admin/')) {
     let body = '';
@@ -168,6 +191,7 @@ const server = http.createServer((req, res) => {
       if (action === 'start') {
         gameState.phase = 'game';
         gameState.currentCaseIndex = 0;
+        gameState.turnTeamId = "1";
         gameState.votes = {};
         gameState.allVotes = [{}, {}, {}];
         gameState.revealDone = false;
@@ -176,6 +200,7 @@ const server = http.createServer((req, res) => {
       } else if (action === 'next') {
         if (gameState.currentCaseIndex < 2) {
           gameState.currentCaseIndex++;
+          gameState.turnTeamId = "1";
           gameState.votes = {};
           gameState.revealDone = false;
         }
@@ -185,6 +210,7 @@ const server = http.createServer((req, res) => {
         } else {
           if (gameState.currentCaseIndex < 2) {
             gameState.currentCaseIndex++;
+            gameState.turnTeamId = "1";
             gameState.votes = {};
             gameState.revealDone = false;
           }
@@ -197,6 +223,7 @@ const server = http.createServer((req, res) => {
           votes: {},
           allVotes: [{}, {}, {}],
           revealDone: false,
+          turnTeamId: "1",
           adminConnected: false
         };
       }
