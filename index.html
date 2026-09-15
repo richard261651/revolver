@@ -811,19 +811,71 @@
     let puntosEquipo = 0;
     let angulo = 0;
 
+    function getDeviceId() {
+      let devId = localStorage.getItem('revolver_device_id');
+      if (!devId) {
+        devId = 'dev_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+        localStorage.setItem('revolver_device_id', devId);
+      }
+      return devId;
+    }
+    const myDeviceId = getDeviceId();
+
     const defaultTeams = () => ({
-      "1": { id: "1", name: "Equipo 1", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
-      "2": { id: "2", name: "Equipo 2", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
-      "3": { id: "3", name: "Equipo 3", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
-      "4": { id: "4", name: "Equipo 4", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
-      "5": { id: "5", name: "Equipo 5", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
-      "6": { id: "6", name: "Equipo 6", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" }
+      "1": { id: "1", name: "Equipo 1", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera", occupied: false, occupiedBy: null },
+      "2": { id: "2", name: "Equipo 2", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera", occupied: false, occupiedBy: null },
+      "3": { id: "3", name: "Equipo 3", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera", occupied: false, occupiedBy: null },
+      "4": { id: "4", name: "Equipo 4", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera", occupied: false, occupiedBy: null },
+      "5": { id: "5", name: "Equipo 5", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera", occupied: false, occupiedBy: null },
+      "6": { id: "6", name: "Equipo 6", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera", occupied: false, occupiedBy: null }
     });
 
     let liveTeamsState = JSON.parse(localStorage.getItem('revolver_teams_live_3v')) || defaultTeams();
 
     function saveLocalTeamsState() {
       localStorage.setItem('revolver_teams_live_3v', JSON.stringify(liveTeamsState));
+    }
+
+    function renderTeamSelectOptions() {
+      const sel = document.getElementById('sel-grupo');
+      if (!sel) return;
+
+      const currentVal = sel.value;
+      let html = '';
+
+      for (let i = 1; i <= 6; i++) {
+        const key = String(i);
+        const team = liveTeamsState[key] || {};
+        const isOccupiedByOther = team.occupied && team.occupiedBy && team.occupiedBy !== myDeviceId;
+        const isOccupiedByMe = team.occupied && team.occupiedBy === myDeviceId;
+
+        let label = `Equipo ${i}`;
+        let disabledAttr = '';
+
+        if (isOccupiedByOther) {
+          label += ` 🔒 (OCUPADO POR OTRO GRUPO)`;
+          disabledAttr = 'disabled style="color:#888; background:#1a1a24;"';
+        } else if (isOccupiedByMe) {
+          label += ` ⭐ (TU EQUIPO SELECCIONADO)`;
+        } else {
+          label += ` (Disponible)`;
+        }
+
+        html += `<option value="${i}" ${disabledAttr}>${label}</option>`;
+      }
+
+      sel.innerHTML = html;
+
+      if (sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].disabled) {
+        for (let i = 0; i < sel.options.length; i++) {
+          if (!sel.options[i].disabled) {
+            sel.selectedIndex = i;
+            break;
+          }
+        }
+      } else if (currentVal && !sel.options[sel.selectedIndex]?.disabled) {
+        sel.value = currentVal;
+      }
     }
 
     // Publicar actualización en tiempo real a la red mediante ntfy.sh y backend
@@ -860,6 +912,7 @@
 
         if (!current || 
             current.status === "En Espera" || 
+            incoming.occupied !== current.occupied ||
             (incoming.updatedAt && incoming.updatedAt >= (current.updatedAt || 0)) ||
             (incoming.score || 0) >= (current.score || 0)) {
           liveTeamsState[data.teamId] = incoming;
@@ -938,63 +991,64 @@
 
     function renderLiveLeaderboardTable() {
       const container = document.getElementById('live-leaderboard-container');
-      if (!container) return;
+      if (container) {
+        const sorted = Object.keys(liveTeamsState).map(k => ({ id: k, ...liveTeamsState[k] }))
+          .sort((a, b) => (b.score || 0) - (a.score || 0));
 
-      const sorted = Object.keys(liveTeamsState).map(k => ({ id: k, ...liveTeamsState[k] }))
-        .sort((a, b) => (b.score || 0) - (a.score || 0));
+        if (sorted.length > 0) {
+          const winner = sorted[0];
+          document.getElementById('lbl-winner-team').innerText = winner.name || `EQUIPO ${winner.id}`;
+          document.getElementById('lbl-winner-score').innerText = `${winner.score || 0} PTS`;
+        }
 
-      // Actualizar Banner de Ganador Actual por Puntos
-      if (sorted.length > 0) {
-        const winner = sorted[0];
-        document.getElementById('lbl-winner-team').innerText = winner.name || `EQUIPO ${winner.id}`;
-        document.getElementById('lbl-winner-score').innerText = `${winner.score || 0} PTS`;
+        let html = `
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>POS</th>
+                <th>EQUIPO</th>
+                <th>AVANCE</th>
+                <th>VIDA (1 MAX)</th>
+                <th>BALAS</th>
+                <th>PUNTOS</th>
+                <th>ESTADO EN VIVO</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        sorted.forEach((item, index) => {
+          const posLabel = `${index + 1}º LUGAR`;
+          const heartsSvg = renderHeartsSVG(item.hearts !== undefined ? item.hearts : 1, 1);
+          const st = item.status || 'En Espera';
+          let badgeClass = 'badge-espera';
+
+          if (st.includes('FIRME') || st.includes('Sobrevivió')) badgeClass = 'badge-firme';
+          else if (st.includes('DISPARO') || st.includes('COLAPSO') || st.includes('DESCALIFICADO') || st.includes('BANG')) badgeClass = 'badge-bang';
+          else if (st.includes('CLIC') || st.includes('SALVADO')) badgeClass = 'badge-clic';
+
+          let caseLabel = `Caso ${item.currentCase || 1}/6`;
+          if (st === 'Sobrevivió') caseLabel = '6/6 (Completado)';
+          else if (st.includes('DESCALIFICADO')) caseLabel = `Caso ${item.currentCase || 1}/6 (Eliminado)`;
+
+          html += `
+            <tr>
+              <td><strong>${posLabel}</strong></td>
+              <td><strong>${item.name || `Equipo ${item.id}`}</strong></td>
+              <td><strong style="color:var(--gold);">${caseLabel}</strong></td>
+              <td><div class="hearts-bar">${heartsSvg}</div></td>
+              <td><strong style="color:var(--red);">BALAS ${item.bullets || 1}/6</strong></td>
+              <td><strong style="color:var(--gold);">${item.score || 0} PTS</strong></td>
+              <td><span class="badge-status ${badgeClass}">${st}</span></td>
+            </tr>
+          `;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
       }
 
-      let html = `
-        <table class="leaderboard-table">
-          <thead>
-            <tr>
-              <th>POS</th>
-              <th>EQUIPO</th>
-              <th>AVANCE</th>
-              <th>VIDA (1 MAX)</th>
-              <th>BALAS</th>
-              <th>PUNTOS</th>
-              <th>ESTADO EN VIVO</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-
-      sorted.forEach((item, index) => {
-        const posLabel = `${index + 1}º LUGAR`;
-        const heartsSvg = renderHeartsSVG(item.hearts !== undefined ? item.hearts : 1, 1);
-        const st = item.status || 'En Espera';
-        let badgeClass = 'badge-espera';
-
-        if (st.includes('FIRME') || st.includes('Sobrevivió')) badgeClass = 'badge-firme';
-        else if (st.includes('DISPARO') || st.includes('COLAPSO') || st.includes('DESCALIFICADO') || st.includes('BANG')) badgeClass = 'badge-bang';
-        else if (st.includes('CLIC') || st.includes('SALVADO')) badgeClass = 'badge-clic';
-
-        let caseLabel = `Caso ${item.currentCase || 1}/6`;
-        if (st === 'Sobrevivió') caseLabel = '6/6 (Completado)';
-        else if (st.includes('DESCALIFICADO')) caseLabel = `Caso ${item.currentCase || 1}/6 (Eliminado)`;
-
-        html += `
-          <tr>
-            <td><strong>${posLabel}</strong></td>
-            <td><strong>${item.name || `Equipo ${item.id}`}</strong></td>
-            <td><strong style="color:var(--gold);">${caseLabel}</strong></td>
-            <td><div class="hearts-bar">${heartsSvg}</div></td>
-            <td><strong style="color:var(--red);">BALAS ${item.bullets || 1}/6</strong></td>
-            <td><strong style="color:var(--gold);">${item.score || 0} PTS</strong></td>
-            <td><span class="badge-status ${badgeClass}">${st}</span></td>
-          </tr>
-        `;
-      });
-
-      html += `</tbody></table>`;
-      container.innerHTML = html;
+      renderTeamSelectOptions();
     }
 
     async function adminResetAll() {
@@ -1055,6 +1109,7 @@
       audio.playClick();
       document.getElementById('box-role-select').style.display = 'none';
       document.getElementById('box-team-login').style.display = 'block';
+      renderTeamSelectOptions();
     }
 
     function volverASeleccionRole() {
@@ -1124,13 +1179,45 @@
       detenerTimer();
       audio.playClick();
       const sel = document.getElementById('sel-grupo');
-      equipoActualId = sel.value;
-      nombreEquipo = sel.options[sel.selectedIndex].text.toUpperCase();
+      const selectedId = sel.value;
+      
+      const targetTeam = liveTeamsState[selectedId] || {};
+      if (targetTeam.occupied && targetTeam.occupiedBy && targetTeam.occupiedBy !== myDeviceId) {
+        alert("¡Este equipo acaba de ser ocupado por otro grupo en vivo! Por favor selecciona un equipo disponible.");
+        renderTeamSelectOptions();
+        return;
+      }
+
+      equipoActualId = selectedId;
+      nombreEquipo = `EQUIPO ${equipoActualId}`;
 
       rondaActual = 0;
       balasEnTambor = 1;
       corazonesRestantes = 1;
       puntosEquipo = 0;
+
+      const teamSnapshot = {
+        id: equipoActualId,
+        name: nombreEquipo,
+        hearts: corazonesRestantes,
+        bullets: balasEnTambor,
+        score: puntosEquipo,
+        currentCase: 1,
+        status: "En Juego",
+        occupied: true,
+        occupiedBy: myDeviceId,
+        updatedAt: Date.now()
+      };
+
+      liveTeamsState[equipoActualId] = teamSnapshot;
+      saveLocalTeamsState();
+      renderLiveLeaderboardTable();
+
+      publishRealtimeUpdate({
+        type: 'TEAM_UPDATE',
+        teamId: equipoActualId,
+        teamState: teamSnapshot
+      });
 
       document.getElementById('box-team-login').style.display = 'none';
       document.getElementById('box-game-view').style.display = 'block';
@@ -1235,6 +1322,8 @@
           score: puntosEquipo,
           currentCase: rondaActual + 1,
           status: newStatus,
+          occupied: true,
+          occupiedBy: myDeviceId,
           updatedAt: Date.now()
         };
         liveTeamsState[equipoActualId] = teamSnapshot;
@@ -1440,7 +1529,9 @@
             score: puntosEquipo,
             currentCase: rondaActual + 1,
             status: newStatus,
-            updatedAt: Date.now()
+            occupied: true,
+          occupiedBy: myDeviceId,
+          updatedAt: Date.now()
           };
           liveTeamsState[equipoActualId] = teamSnapshot;
           saveLocalTeamsState();
@@ -1477,6 +1568,8 @@
           score: puntosEquipo,
           currentCase: rondaActual + 1,
           status: "LÍMITE FIRME",
+          occupied: true,
+          occupiedBy: myDeviceId,
           updatedAt: Date.now()
         };
         liveTeamsState[equipoActualId] = teamSnapshot;
