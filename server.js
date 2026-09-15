@@ -168,15 +168,21 @@ const server = http.createServer((req, res) => {
         const current = parseInt(gameState.turnTeamId || "1");
         const next = current < 6 ? current + 1 : 1;
         gameState.turnTeamId = String(next);
+        gameState.turnEndsAt = Date.now() + 60000;
+      } else if (action === 'reset-timer') {
+        gameState.turnEndsAt = Date.now() + 60000;
       } else if (action === 'select') {
         try {
           const parsed = JSON.parse(body || '{}');
-          if (parsed.teamId) gameState.turnTeamId = String(parsed.teamId);
+          if (parsed.teamId) {
+            gameState.turnTeamId = String(parsed.teamId);
+            gameState.turnEndsAt = Date.now() + 60000;
+          }
         } catch (e) {}
       }
       broadcastState();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, turnTeamId: gameState.turnTeamId }));
+      res.end(JSON.stringify({ success: true, turnTeamId: gameState.turnTeamId, gameState }));
     });
     return;
   }
@@ -192,6 +198,8 @@ const server = http.createServer((req, res) => {
         gameState.phase = 'game';
         gameState.currentCaseIndex = 0;
         gameState.turnTeamId = "1";
+        gameState.turnEndsAt = Date.now() + 60000;
+        gameState.caseEndsAt = Date.now() + 45000;
         gameState.votes = {};
         gameState.allVotes = [{}, {}, {}];
         gameState.revealDone = false;
@@ -201,6 +209,8 @@ const server = http.createServer((req, res) => {
         if (gameState.currentCaseIndex < 2) {
           gameState.currentCaseIndex++;
           gameState.turnTeamId = "1";
+          gameState.turnEndsAt = Date.now() + 60000;
+          gameState.caseEndsAt = Date.now() + 45000;
           gameState.votes = {};
           gameState.revealDone = false;
         }
@@ -211,6 +221,8 @@ const server = http.createServer((req, res) => {
           if (gameState.currentCaseIndex < 2) {
             gameState.currentCaseIndex++;
             gameState.turnTeamId = "1";
+            gameState.turnEndsAt = Date.now() + 60000;
+            gameState.caseEndsAt = Date.now() + 45000;
             gameState.votes = {};
             gameState.revealDone = false;
           }
@@ -224,6 +236,8 @@ const server = http.createServer((req, res) => {
           allVotes: [{}, {}, {}],
           revealDone: false,
           turnTeamId: "1",
+          turnEndsAt: Date.now() + 60000,
+          caseEndsAt: Date.now() + 45000,
           adminConnected: false
         };
       }

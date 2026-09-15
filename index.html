@@ -549,13 +549,19 @@
       setTimeout(() => entrarComoEquipo(), 100);
     }
 
+    let timeOffset = 0;
+
     async function syncVercelState() {
       try {
         const res = await fetch('/api/state');
         if (res.ok) {
           const data = await res.json();
           serverState = data;
+          if (data.serverTime) {
+            timeOffset = data.serverTime - Date.now();
+          }
           updateUI();
+          updateTimersDisplay();
         }
       } catch (e) {
         console.warn("Syncing state with Vercel:", e);
@@ -563,29 +569,37 @@
     }
 
     setInterval(syncVercelState, 1000);
+    setInterval(updateTimersDisplay, 500);
 
-    let lastTurnTeamId = null;
-    let turnSecondsRemaining = 60;
-    let turnTimerInterval = null;
+    function updateTimersDisplay() {
+      const nowServer = Date.now() + timeOffset;
 
-    function startTurnTimer() {
-      if (turnTimerInterval) clearInterval(turnTimerInterval);
-      turnSecondsRemaining = 60;
-
-      turnTimerInterval = setInterval(() => {
-        if (turnSecondsRemaining > 0) {
-          turnSecondsRemaining--;
-        }
-        const text = turnSecondsRemaining > 0 ? `⏱️ ${turnSecondsRemaining}s` : `⏱️ ¡TIEMPO!`;
+      // 1. Contador de Turno de Habla (60s)
+      if (serverState.turnEndsAt) {
+        const turnMs = Math.max(0, serverState.turnEndsAt - nowServer);
+        const turnSec = Math.ceil(turnMs / 1000);
+        const text = turnSec > 0 ? `⏱️ ${turnSec}s` : `⏱️ ¡TIEMPO!`;
         const adminEl = document.getElementById('admin-turn-countdown');
         const studentEl = document.getElementById('student-turn-countdown');
         if (adminEl) adminEl.textContent = text;
         if (studentEl) studentEl.textContent = text;
-      }, 1000);
+      }
+
+      // 2. Contador del Caso (45s)
+      if (serverState.caseEndsAt) {
+        const caseMs = Math.max(0, serverState.caseEndsAt - nowServer);
+        const caseSec = Math.ceil(caseMs / 1000);
+        const text = caseSec > 0 ? `⏱️ ${caseSec}s` : `⏱️ ¡TIEMPO CUMPLIDO!`;
+        const caseEl = document.getElementById('admin-timer-val');
+        if (caseEl) caseEl.textContent = text;
+      }
     }
 
-    function resetTurnTimer() {
-      startTurnTimer();
+    async function resetTurnTimer() {
+      try {
+        await fetch('/api/turn/reset-timer', { method: 'POST' });
+        syncVercelState();
+      } catch (e) {}
     }
 
     async function nextTurnServer() {
@@ -595,23 +609,6 @@
       } catch (e) {
         console.warn("Error cediendo turno:", e);
       }
-    }
-
-    function startCaseTimer() {
-      if (timerInterval) clearInterval(timerInterval);
-      timerSeconds = 45;
-      const el = document.getElementById('admin-timer-val');
-      if (el) el.textContent = `⏱️ ${timerSeconds}s`;
-
-      timerInterval = setInterval(() => {
-        if (timerSeconds > 0) {
-          timerSeconds--;
-          if (el) el.textContent = `⏱️ ${timerSeconds}s`;
-        } else {
-          clearInterval(timerInterval);
-          if (el) el.textContent = `⏱️ ¡TIEMPO CUMPLIDO!`;
-        }
-      }, 1000);
     }
 
     function copiarEnlaceVercel() {
@@ -720,17 +717,11 @@
 
     async function adminStartGame() {
       await fetch('/api/admin/start', { method: 'POST' });
-      startCaseTimer();
       syncVercelState();
     }
 
     async function adminQuickAdvance() {
       await fetch('/api/admin/quick-advance', { method: 'POST' });
-      if (!serverState.revealDone) {
-        // Just revealed
-      } else {
-        startCaseTimer();
-      }
       syncVercelState();
     }
 
@@ -741,7 +732,6 @@
       } else if (diff < 0) {
         for (let i = 0; i < Math.abs(diff); i++) await fetch('/api/admin/prev', { method: 'POST' });
       }
-      startCaseTimer();
       syncVercelState();
     }
 

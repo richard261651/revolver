@@ -35,6 +35,8 @@ let gameState = {
   allVotes: [{}, {}, {}],
   revealDone: false,
   turnTeamId: "1",
+  turnEndsAt: Date.now() + 60000,
+  caseEndsAt: Date.now() + 45000,
   casos: CASOS_FIJOS
 };
 
@@ -46,6 +48,7 @@ app.get('/api/state', (req, res) => {
 
   res.json({
     ...gameState,
+    serverTime: Date.now(),
     baseUrl
   });
 });
@@ -89,7 +92,14 @@ app.post('/api/turn/next', (req, res) => {
   const current = parseInt(gameState.turnTeamId || "1");
   const next = current < 6 ? current + 1 : 1;
   gameState.turnTeamId = String(next);
-  return res.json({ success: true, turnTeamId: gameState.turnTeamId });
+  gameState.turnEndsAt = Date.now() + 60000;
+  return res.json({ success: true, turnTeamId: gameState.turnTeamId, gameState });
+});
+
+// POST /api/turn/reset-timer
+app.post('/api/turn/reset-timer', (req, res) => {
+  gameState.turnEndsAt = Date.now() + 60000;
+  return res.json({ success: true, gameState });
 });
 
 // POST /api/turn/select
@@ -97,8 +107,9 @@ app.post('/api/turn/select', (req, res) => {
   const { teamId } = req.body;
   if (teamId) {
     gameState.turnTeamId = String(teamId);
+    gameState.turnEndsAt = Date.now() + 60000;
   }
-  return res.json({ success: true, turnTeamId: gameState.turnTeamId });
+  return res.json({ success: true, turnTeamId: gameState.turnTeamId, gameState });
 });
 
 // POST /api/admin/:action
@@ -109,6 +120,8 @@ app.post('/api/admin/:action', (req, res) => {
     gameState.phase = 'game';
     gameState.currentCaseIndex = 0;
     gameState.turnTeamId = "1";
+    gameState.turnEndsAt = Date.now() + 60000;
+    gameState.caseEndsAt = Date.now() + 45000;
     gameState.votes = {};
     gameState.allVotes = [{}, {}, {}];
     gameState.revealDone = false;
@@ -118,6 +131,8 @@ app.post('/api/admin/:action', (req, res) => {
     if (gameState.currentCaseIndex < CASOS_FIJOS.length - 1) {
       gameState.currentCaseIndex++;
       gameState.turnTeamId = "1";
+      gameState.turnEndsAt = Date.now() + 60000;
+      gameState.caseEndsAt = Date.now() + 45000;
       gameState.votes = {};
       gameState.revealDone = false;
     }
@@ -125,17 +140,20 @@ app.post('/api/admin/:action', (req, res) => {
     if (gameState.currentCaseIndex > 0) {
       gameState.currentCaseIndex--;
       gameState.turnTeamId = "1";
+      gameState.turnEndsAt = Date.now() + 60000;
+      gameState.caseEndsAt = Date.now() + 45000;
       gameState.votes = {};
       gameState.revealDone = false;
     }
   } else if (action === 'quick-advance') {
-    // Revela e inmediatamente avanza al siguiente caso
     if (!gameState.revealDone) {
       gameState.revealDone = true;
     } else {
       if (gameState.currentCaseIndex < CASOS_FIJOS.length - 1) {
         gameState.currentCaseIndex++;
         gameState.turnTeamId = "1";
+        gameState.turnEndsAt = Date.now() + 60000;
+        gameState.caseEndsAt = Date.now() + 45000;
         gameState.votes = {};
         gameState.revealDone = false;
       }
@@ -149,6 +167,8 @@ app.post('/api/admin/:action', (req, res) => {
       allVotes: [{}, {}, {}],
       revealDone: false,
       turnTeamId: "1",
+      turnEndsAt: Date.now() + 60000,
+      caseEndsAt: Date.now() + 45000,
       casos: CASOS_FIJOS
     };
   }
