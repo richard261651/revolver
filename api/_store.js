@@ -27,7 +27,7 @@ function compactEncode(fullState) {
     ];
   });
   return {
-    r: fullState.resetCounter || Date.now(),
+    r: fullState.resetCounter || 0,
     u: fullState.updatedAt || Date.now(),
     t: compactTeams
   };
@@ -61,7 +61,7 @@ function compactDecode(compactState) {
 
 let inMemoryState = {
   phase: 'playing',
-  resetCounter: Date.now(),
+  resetCounter: 0,
   teams: initialTeams(),
   updatedAt: 0
 };

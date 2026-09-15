@@ -1105,7 +1105,17 @@
       }
 
       if (statePayload && statePayload.teams) {
-        const isResetEvent = (statePayload.resetCounter !== undefined && statePayload.resetCounter > lastResetCounter);
+        // Sync lastResetCounter on initial load without triggering a false alert
+        if (!lastResetCounter && statePayload.resetCounter) {
+          lastResetCounter = statePayload.resetCounter;
+          localStorage.setItem('revolver_last_reset', String(lastResetCounter));
+        }
+
+        const isResetEvent = Boolean(
+          statePayload.resetCounter && 
+          lastResetCounter > 0 && 
+          statePayload.resetCounter > lastResetCounter
+        );
 
         let updatedAny = false;
         Object.keys(statePayload.teams).forEach(k => {
@@ -1138,23 +1148,18 @@
           renderLiveLeaderboardTable();
         }
 
-        // COMPROBACIÓN DE REINICIO PARA PARTICIPANTES:
-        // Si el participante está dentro del juego, pero el juego fue reiniciado o su equipo volvió a estar libre/en espera
+        // COMPROBACIÓN DE REINICIO ÚNICO PARA PARTICIPANTES:
+        // Solo expulsar a los participantes cuando ocurra UN EVENTO DE REINICIO REAL por parte del docente
         const gameView = document.getElementById('box-game-view');
         const isInGameView = gameView && gameView.style.display !== 'none';
 
-        if (isInGameView && equipoActualId) {
-          const myTeamState = liveTeamsState[equipoActualId];
-          const isMyTeamReset = isResetEvent || !myTeamState || !myTeamState.occupied || myTeamState.status === "En Espera";
-
-          if (isMyTeamReset) {
-            detenerTimer();
-            equipoActualId = null;
-            gameView.style.display = 'none';
-            document.getElementById('box-team-login').style.display = 'block';
-            renderTeamSelectOptions();
-            alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
-          }
+        if (isInGameView && equipoActualId && isResetEvent) {
+          detenerTimer();
+          equipoActualId = null;
+          gameView.style.display = 'none';
+          document.getElementById('box-team-login').style.display = 'block';
+          renderTeamSelectOptions();
+          alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
         }
       }
     }
