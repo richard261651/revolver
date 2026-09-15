@@ -1157,16 +1157,30 @@
           const sTeam = statePayload.teams[k];
           const lTeam = liveTeamsState[k];
           if (sTeam) {
-            if (!lTeam || 
-                lTeam.occupied !== sTeam.occupied || 
-                lTeam.status !== sTeam.status || 
-                lTeam.score !== sTeam.score || 
-                lTeam.bullets !== sTeam.bullets ||
-                lTeam.hearts !== sTeam.hearts ||
-                lTeam.currentCase !== sTeam.currentCase ||
-                lTeam.occupiedBy !== sTeam.occupiedBy) {
-              liveTeamsState[k] = sTeam;
-              updatedAny = true;
+            if (equipoActualId && String(k) === String(equipoActualId) && !isResetEvent) {
+              const sTime = sTeam.updatedAt || 0;
+              const lTime = lTeam ? (lTeam.updatedAt || 0) : 0;
+              const sCase = sTeam.currentCase || 1;
+              const lCase = lTeam ? (lTeam.currentCase || 1) : 1;
+              const sScore = sTeam.score || 0;
+              const lScore = lTeam ? (lTeam.score || 0) : 0;
+
+              if (sTime > lTime || sCase > lCase || (sScore > lScore && sCase >= lCase)) {
+                liveTeamsState[k] = sTeam;
+                updatedAny = true;
+              }
+            } else {
+              if (!lTeam || 
+                  lTeam.occupied !== sTeam.occupied || 
+                  lTeam.status !== sTeam.status || 
+                  lTeam.score !== sTeam.score || 
+                  lTeam.bullets !== sTeam.bullets ||
+                  lTeam.hearts !== sTeam.hearts ||
+                  lTeam.currentCase !== sTeam.currentCase ||
+                  lTeam.occupiedBy !== sTeam.occupiedBy) {
+                liveTeamsState[k] = sTeam;
+                updatedAny = true;
+              }
             }
           }
         });
@@ -1221,12 +1235,20 @@
       const container = document.getElementById('live-leaderboard-container');
       if (container) {
         const sorted = Object.keys(liveTeamsState).map(k => ({ id: k, ...liveTeamsState[k] }))
-          .sort((a, b) => (b.score || 0) - (a.score || 0));
+          .sort((a, b) => {
+            const aDisqualified = Boolean((a.status || '').match(/DESCALIFICADO|BANG/i));
+            const bDisqualified = Boolean((b.status || '').match(/DESCALIFICADO|BANG/i));
+            if (aDisqualified !== bDisqualified) {
+              return aDisqualified ? 1 : -1;
+            }
+            return (b.score || 0) - (a.score || 0);
+          });
 
         if (sorted.length > 0) {
           const winner = sorted[0];
+          const isWinnerDisqualified = Boolean((winner.status || '').match(/DESCALIFICADO|BANG/i));
           document.getElementById('lbl-winner-team').innerText = winner.name || `EQUIPO ${winner.id}`;
-          document.getElementById('lbl-winner-score').innerText = `${winner.score || 0} PTS`;
+          document.getElementById('lbl-winner-score').innerText = `${winner.score || 0} PTS${isWinnerDisqualified ? ' (ELIMINADO)' : ''}`;
         }
 
         let html = `
@@ -1246,28 +1268,43 @@
               <tbody>
         `;
 
+        const posMedals = ['1º 🥇', '2º 🥈', '3º 🥉', '4º', '5º', '6º'];
+
         sorted.forEach((item, index) => {
-          const posLabel = `${index + 1}º`;
+          const posLabel = posMedals[index] || `${index + 1}º`;
           const heartsSvg = renderHeartsSVG(item.hearts !== undefined ? item.hearts : 1, 1);
           const st = item.status || 'En Espera';
           let badgeClass = 'badge-espera';
 
+          const isDisqualified = Boolean(st.match(/DISPARO|COLAPSO|DESCALIFICADO|BANG/i));
+
           if (st.includes('FIRME') || st.includes('Sobrevivió')) badgeClass = 'badge-firme';
-          else if (st.includes('DISPARO') || st.includes('COLAPSO') || st.includes('DESCALIFICADO') || st.includes('BANG')) badgeClass = 'badge-bang';
+          else if (isDisqualified) badgeClass = 'badge-bang';
           else if (st.includes('CLIC') || st.includes('SALVADO')) badgeClass = 'badge-clic';
 
           let caseLabel = `Caso ${item.currentCase || 1}/6`;
           if (st === 'Sobrevivió') caseLabel = '6/6 (Completado)';
-          else if (st.includes('DESCALIFICADO')) caseLabel = `Caso ${item.currentCase || 1}/6 (Eliminado)`;
+          else if (isDisqualified) caseLabel = `Caso ${item.currentCase || 1}/6 (Eliminado)`;
+
+          const isMyTeam = equipoActualId && String(item.id) === String(equipoActualId);
+          let rowStyle = '';
+          if (isMyTeam) {
+            rowStyle = 'background: rgba(255,183,3,0.14); border-left: 3px solid var(--gold);';
+          } else if (isDisqualified) {
+            rowStyle = 'background: rgba(255,51,102,0.12); opacity: 0.88;';
+          }
+
+          let teamNameLabel = item.name || `Equipo ${item.id}`;
+          if (isMyTeam) teamNameLabel += ' ⭐ (TU EQUIPO)';
 
           html += `
-            <tr>
+            <tr style="${rowStyle}">
               <td><strong>${posLabel}</strong></td>
-              <td><strong>${item.name || `Equipo ${item.id}`}</strong></td>
+              <td><strong>${teamNameLabel}</strong></td>
               <td><strong style="color:var(--gold);">${caseLabel}</strong></td>
               <td><div class="hearts-bar" style="justify-content:center;">${heartsSvg}</div></td>
               <td><strong style="color:var(--red);">${item.bullets || 1}/6</strong></td>
-              <td><strong style="color:var(--gold);">${item.score || 0} PTS</strong></td>
+              <td><strong style="color:var(--gold); font-size:0.95rem;">${item.score || 0} PTS</strong></td>
               <td><span class="badge-status ${badgeClass}">${st}</span></td>
             </tr>
           `;
