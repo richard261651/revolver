@@ -1180,8 +1180,31 @@
         currentGamePhase = 'waiting';
         equipoActualId = null;
         nombreEquipo = "";
+        rondaActual = 0;
+        balasEnTambor = 1;
+        corazonesRestantes = 1;
+        puntosEquipo = 0;
         liveTeamsState = defaultTeams();
         saveLocalTeamsState();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminView = document.getElementById('box-admin-view');
+        const isAdminMode = urlParams.get('mode') === 'admin' || window.location.hash === '#admin' || (adminView && adminView.style.display !== 'none');
+
+        if (!isAdminMode) {
+          const gameView = document.getElementById('box-game-view');
+          const lobbyView = document.getElementById('box-lobby-view');
+          const resultsView = document.getElementById('box-results-view');
+          const teamLogin = document.getElementById('box-team-login');
+
+          if (gameView) gameView.style.display = 'none';
+          if (lobbyView) lobbyView.style.display = 'none';
+          if (resultsView) resultsView.style.display = 'none';
+          if (teamLogin) {
+            teamLogin.style.display = 'block';
+            renderTeamSelectOptions();
+          }
+        }
         syncStateWithServer();
       } else if (data.type === 'TEAM_UPDATE' && data.teamId && data.teamState) {
         const incoming = data.teamState;
@@ -1274,6 +1297,10 @@
           liveTeamsState = defaultTeams();
           equipoActualId = null;
           nombreEquipo = "";
+          rondaActual = 0;
+          balasEnTambor = 1;
+          corazonesRestantes = 1;
+          puntosEquipo = 0;
           updatedAny = true;
         }
 
@@ -1349,6 +1376,15 @@
               detenerTimer();
               if (gameView && gameView.style.display !== 'none') {
                 gameView.style.display = 'none';
+              }
+
+              if (isResetEvent) {
+                equipoActualId = null;
+                nombreEquipo = "";
+                rondaActual = 0;
+                balasEnTambor = 1;
+                corazonesRestantes = 1;
+                puntosEquipo = 0;
               }
 
               if (equipoActualId) {
