@@ -1214,17 +1214,28 @@
           mostrarRonda();
         }
 
-        // COMPROBACIÓN DE REINICIO ÚNICO PARA PARTICIPANTES:
-        // Solo expulsar a los participantes cuando ocurra UN EVENTO DE REINICIO REAL por parte del docente
-        if ((isInGameView || isInLobbyView) && equipoActualId && isResetEvent) {
+        // EVENTO DE REINICIO POR EL DOCENTE:
+        // Detiene la partida inmediatamente y devuelve a todos los participantes a la Sala de Espera
+        if ((isInGameView || isInLobbyView) && isResetEvent) {
           detenerTimer();
-          equipoActualId = null;
+          rondaActual = 0;
+          balasEnTambor = 1;
+          corazonesRestantes = 1;
+          puntosEquipo = 0;
           currentGamePhase = 'waiting';
+          
           if (gameView) gameView.style.display = 'none';
-          if (lobbyView) lobbyView.style.display = 'none';
-          document.getElementById('box-team-login').style.display = 'block';
-          renderTeamSelectOptions();
-          alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
+          if (equipoActualId) {
+            if (lobbyView) lobbyView.style.display = 'block';
+            const lblLobby = document.getElementById('lbl-lobby-grupo');
+            if (lblLobby) lblLobby.innerText = `${nombreEquipo} - SALA DE ESPERA`;
+            document.getElementById('box-team-login').style.display = 'none';
+          } else {
+            if (lobbyView) lobbyView.style.display = 'none';
+            document.getElementById('box-team-login').style.display = 'block';
+            renderTeamSelectOptions();
+          }
+          alert("🛑 El docente ha reiniciado la actividad. La partida se ha detenido y todos los equipos han vuelto a la Sala de Espera.");
         }
       }
     }
