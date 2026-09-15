@@ -14,12 +14,12 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 const initialTeams = () => ({
-  "1": { id: "1", name: "Equipo 1", hearts: 3, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
-  "2": { id: "2", name: "Equipo 2", hearts: 3, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
-  "3": { id: "3", name: "Equipo 3", hearts: 3, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
-  "4": { id: "4", name: "Equipo 4", hearts: 3, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
-  "5": { id: "5", name: "Equipo 5", hearts: 3, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
-  "6": { id: "6", name: "Equipo 6", hearts: 3, bullets: 1, score: 0, currentCase: 0, status: "En Espera" }
+  "1": { id: "1", name: "Equipo 1", hearts: 1, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
+  "2": { id: "2", name: "Equipo 2", hearts: 1, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
+  "3": { id: "3", name: "Equipo 3", hearts: 1, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
+  "4": { id: "4", name: "Equipo 4", hearts: 1, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
+  "5": { id: "5", name: "Equipo 5", hearts: 1, bullets: 1, score: 0, currentCase: 0, status: "En Espera" },
+  "6": { id: "6", name: "Equipo 6", hearts: 1, bullets: 1, score: 0, currentCase: 0, status: "En Espera" }
 });
 
 let gameState = {

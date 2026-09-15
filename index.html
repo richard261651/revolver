@@ -354,6 +354,26 @@
       background: linear-gradient(90deg, var(--green) 0%, var(--gold) 50%, var(--red) 100%);
       transition: width 1s linear;
     }
+
+    /* Flecha superior del revólver (Punto de Disparo) */
+    .top-arrow-indicator {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--red);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      z-index: 10;
+      white-space: nowrap;
+      text-shadow: 0 0 8px var(--red);
+      animation: pulse-arrow 0.8s infinite alternate;
+    }
+    @keyframes pulse-arrow {
+      0% { transform: translate(-50%, 0); opacity: 0.85; }
+      100% { transform: translate(-50%, -4px); opacity: 1; text-shadow: 0 0 14px var(--red); }
+    }
   </style>
 </head>
 <body>
@@ -438,7 +458,7 @@
       <option value="6">Equipo 6</option>
     </select>
 
-    <button class="btn-main" onclick="confirmarEquipo()">Iniciar Ruleta Rusa (3 Vidas)</button>
+    <button class="btn-main" onclick="confirmarEquipo()">Iniciar Ruleta Rusa (1 Vida)</button>
     <button class="btn-secondary" onclick="volverASeleccionRole()">← Volver</button>
   </div>
 
@@ -452,21 +472,27 @@
       </div>
     </div>
 
-    <!-- Indicador de 3 Vidas (Iconos SVG Vectoriales sin Emojis) -->
+    <!-- Indicador de 1 Vida (Sin Retorno) -->
     <div style="margin-top: 6px; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 12px; border-radius:8px;">
-      <span style="font-size:0.75rem; color:#aaa; font-weight:bold;">SALUD RELACIONAL (3 VIDAS):</span>
+      <span style="font-size:0.75rem; color:#aaa; font-weight:bold;">SALUD RELACIONAL (1 VIDA - SIN RETORNO):</span>
       <div class="hearts-bar" id="lbl-corazones-svg"></div>
     </div>
 
-    <!-- Tambor giratorio de 6 recámaras -->
-    <div class="cylinder-wrap" id="tambor">
-      <div class="cylinder-center"></div>
-      <div class="chamber c1" id="slot-0">1</div>
-      <div class="chamber c2" id="slot-1">2</div>
-      <div class="chamber c3" id="slot-2">3</div>
-      <div class="chamber c4" id="slot-3">4</div>
-      <div class="chamber c5" id="slot-4">5</div>
-      <div class="chamber c6" id="slot-5">6</div>
+    <!-- Tambor giratorio de 6 recámaras con Flecha Indicadora de Disparo arriba -->
+    <div style="position:relative; display:inline-block; margin: 20px auto 10px;">
+      <!-- Flechita indicadora superior (Percutor / Punto de Disparo) -->
+      <div class="top-arrow-indicator">
+        ▼ LÍNEA DE DISPARO
+      </div>
+      <div class="cylinder-wrap" id="tambor">
+        <div class="cylinder-center"></div>
+        <div class="chamber c1" id="slot-0">1</div>
+        <div class="chamber c2" id="slot-1">2</div>
+        <div class="chamber c3" id="slot-2">3</div>
+        <div class="chamber c4" id="slot-3">4</div>
+        <div class="chamber c5" id="slot-4">5</div>
+        <div class="chamber c6" id="slot-5">6</div>
+      </div>
     </div>
 
     <!-- Barra de Tiempo Progresiva -->
@@ -781,17 +807,17 @@
     let nombreEquipo = "EQUIPO 1";
     let rondaActual = 0;
     let balasEnTambor = 1;
-    let corazonesRestantes = 3;
+    let corazonesRestantes = 1;
     let puntosEquipo = 0;
     let angulo = 0;
 
     const defaultTeams = () => ({
-      "1": { id: "1", name: "Equipo 1", hearts: 3, bullets: 1, score: 0, status: "En Espera" },
-      "2": { id: "2", name: "Equipo 2", hearts: 3, bullets: 1, score: 0, status: "En Espera" },
-      "3": { id: "3", name: "Equipo 3", hearts: 3, bullets: 1, score: 0, status: "En Espera" },
-      "4": { id: "4", name: "Equipo 4", hearts: 3, bullets: 1, score: 0, status: "En Espera" },
-      "5": { id: "5", name: "Equipo 5", hearts: 3, bullets: 1, score: 0, status: "En Espera" },
-      "6": { id: "6", name: "Equipo 6", hearts: 3, bullets: 1, score: 0, status: "En Espera" }
+      "1": { id: "1", name: "Equipo 1", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
+      "2": { id: "2", name: "Equipo 2", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
+      "3": { id: "3", name: "Equipo 3", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
+      "4": { id: "4", name: "Equipo 4", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
+      "5": { id: "5", name: "Equipo 5", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" },
+      "6": { id: "6", name: "Equipo 6", hearts: 1, bullets: 1, score: 0, currentCase: 1, status: "En Espera" }
     });
 
     let liveTeamsState = JSON.parse(localStorage.getItem('revolver_teams_live_3v')) || defaultTeams();
@@ -866,7 +892,7 @@
     // Polling en vivo de respaldo contra ntfy.sh y backend
     async function syncStateWithServer() {
       try {
-        const res = await fetch(`${NTFY_URL}/json?poll=1&since=5m`);
+        const res = await fetch(`${NTFY_URL}/json?poll=1&since=1h`);
         if (res.ok) {
           const text = await res.text();
           const lines = text.trim().split('\n');
@@ -930,7 +956,8 @@
             <tr>
               <th>POS</th>
               <th>EQUIPO</th>
-              <th>VIDAS (3 MAX)</th>
+              <th>AVANCE</th>
+              <th>VIDA (1 MAX)</th>
               <th>BALAS</th>
               <th>PUNTOS</th>
               <th>ESTADO EN VIVO</th>
@@ -941,18 +968,23 @@
 
       sorted.forEach((item, index) => {
         const posLabel = `${index + 1}º LUGAR`;
-        const heartsSvg = renderHeartsSVG(item.hearts || 0, 3);
+        const heartsSvg = renderHeartsSVG(item.hearts !== undefined ? item.hearts : 1, 1);
         const st = item.status || 'En Espera';
         let badgeClass = 'badge-espera';
 
         if (st.includes('FIRME') || st.includes('Sobrevivió')) badgeClass = 'badge-firme';
-        else if (st.includes('DISPARO') || st.includes('COLAPSO')) badgeClass = 'badge-bang';
+        else if (st.includes('DISPARO') || st.includes('COLAPSO') || st.includes('DESCALIFICADO') || st.includes('BANG')) badgeClass = 'badge-bang';
         else if (st.includes('CLIC') || st.includes('SALVADO')) badgeClass = 'badge-clic';
+
+        let caseLabel = `Caso ${item.currentCase || 1}/6`;
+        if (st === 'Sobrevivió') caseLabel = '6/6 (Completado)';
+        else if (st.includes('DESCALIFICADO')) caseLabel = `Caso ${item.currentCase || 1}/6 (Eliminado)`;
 
         html += `
           <tr>
             <td><strong>${posLabel}</strong></td>
             <td><strong>${item.name || `Equipo ${item.id}`}</strong></td>
+            <td><strong style="color:var(--gold);">${caseLabel}</strong></td>
             <td><div class="hearts-bar">${heartsSvg}</div></td>
             <td><strong style="color:var(--red);">BALAS ${item.bullets || 1}/6</strong></td>
             <td><strong style="color:var(--gold);">${item.score || 0} PTS</strong></td>
@@ -966,7 +998,7 @@
     }
 
     async function adminResetAll() {
-      if (confirm("¿Reiniciar la tabla de posiciones y restablecer los 6 equipos a 3 vidas iniciales?")) {
+      if (confirm("¿Reiniciar la tabla de posiciones y restablecer los 6 equipos a 1 vida inicial?")) {
         liveTeamsState = defaultTeams();
         saveLocalTeamsState();
         renderLiveLeaderboardTable();
@@ -1088,74 +1120,6 @@
       }, 1000);
     }
 
-    async function manejadorTiempoAgotado() {
-      detenerTimer();
-      document.getElementById('actions-panel').style.display = 'none';
-      const fb = document.getElementById('feedback-box');
-      fb.style.display = 'block';
-      document.getElementById('btn-next').style.display = 'block';
-
-      balasEnTambor = Math.min(6, balasEnTambor + 1);
-      actualizarTambor();
-
-      girarTambor(async () => {
-        const disparo = Math.random() < (balasEnTambor / 6);
-        let newStatus = "TIEMPO AGOTADO (CLIC)";
-
-        if (disparo) {
-          audio.playBang();
-          corazonesRestantes = Math.max(0, corazonesRestantes - 1);
-          actualizarCorazonesUI();
-          newStatus = corazonesRestantes > 0 ? "DISPARO (TIEMPO AGOTADO)" : "COLAPSO TOTAL";
-
-          if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
-          const f = document.getElementById('flash-screen');
-          f.classList.add('active');
-          setTimeout(() => f.classList.remove('active'), 120);
-
-          fb.style.background = '#381216';
-          fb.style.border = '1px solid var(--red)';
-          fb.style.color = '#ffccd5';
-          fb.innerHTML = `<b>¡TIEMPO AGOTADO (30S)! EL REVÓLVER SE DISPARÓ (PIERDEN 1 VIDA)</b><br>Se agotó el tiempo de 30 segundos sin tomar una decisión. La duda o la indecisión ante la violencia permite que el agresor tome el control y el riesgo se dispare.<br><br><small>Se cargó 1 bala extra, el revólver giró por tiempo agotado y se disparó. Quedan ${corazonesRestantes} vidas de salud relacional.</small>`;
-        } else {
-          audio.playClick();
-          fb.style.background = '#2b2310';
-          fb.style.border = '1px solid var(--gold)';
-          fb.style.color = '#ffe082';
-          fb.innerHTML = `<b>¡TIEMPO AGOTADO (30S)! SE SALVARON POR PURA SUERTE</b><br>Se agotó el tiempo de 30 segundos sin responder. El revólver giró por indecisión pero la recámara actual estaba vacía.<br><br><small>Se cargó 1 bala extra al tambor por no responder a tiempo. El tambor ahora tiene ${balasEnTambor} balas.</small>`;
-        }
-
-        const teamSnapshot = {
-          id: equipoActualId,
-          name: nombreEquipo,
-          hearts: corazonesRestantes,
-          bullets: balasEnTambor,
-          score: puntosEquipo,
-          status: newStatus
-        };
-        liveTeamsState[equipoActualId] = teamSnapshot;
-        saveLocalTeamsState();
-        renderLiveLeaderboardTable();
-
-        publishRealtimeUpdate({
-          type: 'TEAM_UPDATE',
-          teamId: equipoActualId,
-          teamState: teamSnapshot
-        });
-
-        try {
-          await fetch('/api/team/action', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              teamId: equipoActualId,
-              teamState: teamSnapshot
-            })
-          });
-        } catch (e) {}
-      });
-    }
-
     function confirmarEquipo() {
       detenerTimer();
       audio.playClick();
@@ -1165,7 +1129,7 @@
 
       rondaActual = 0;
       balasEnTambor = 1;
-      corazonesRestantes = 3;
+      corazonesRestantes = 1;
       puntosEquipo = 0;
 
       document.getElementById('box-team-login').style.display = 'none';
@@ -1179,7 +1143,7 @@
 
     function actualizarCorazonesUI() {
       const el = document.getElementById('lbl-corazones-svg');
-      el.innerHTML = renderHeartsSVG(corazonesRestantes, 3);
+      el.innerHTML = renderHeartsSVG(corazonesRestantes, 1);
     }
 
     function actualizarTambor() {
@@ -1192,11 +1156,97 @@
       document.getElementById('lbl-balas').innerText = `BALAS: ${balasEnTambor}/6`;
     }
 
-    function girarTambor(callback) {
+    // Girar tambor y hacer que un slot aleatorio quede alineado directamente bajo la flecha superior (12 o'clock)
+    function girarTamborConResultado(callback) {
       audio.playSpin();
-      angulo += 360 + Math.floor(Math.random() * 6) * 60;
-      document.getElementById('tambor').style.transform = `rotate(${angulo}deg)`;
-      setTimeout(callback, 700);
+      const selectedSlot = Math.floor(Math.random() * 6);
+      
+      const degreesForSlot = (360 - (selectedSlot * 60)) % 360;
+      angulo += 1080 + degreesForSlot;
+      
+      const tamborEl = document.getElementById('tambor');
+      if (tamborEl) tamborEl.style.transform = `rotate(${angulo}deg)`;
+
+      const disparo = selectedSlot < balasEnTambor;
+
+      setTimeout(() => {
+        callback(disparo, selectedSlot);
+      }, 750);
+    }
+
+    async function manejadorTiempoAgotado() {
+      detenerTimer();
+      document.getElementById('actions-panel').style.display = 'none';
+      const fb = document.getElementById('feedback-box');
+      fb.style.display = 'block';
+
+      balasEnTambor = Math.min(6, balasEnTambor + 1);
+      actualizarTambor();
+
+      girarTamborConResultado(async (disparo, slotAlineado) => {
+        let newStatus = "TIEMPO AGOTADO (CLIC)";
+
+        if (disparo) {
+          audio.playBang();
+          corazonesRestantes = 0;
+          actualizarCorazonesUI();
+          newStatus = "DESCALIFICADO (BANG!)";
+
+          if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+          const f = document.getElementById('flash-screen');
+          f.classList.add('active');
+          setTimeout(() => f.classList.remove('active'), 120);
+
+          fb.style.background = '#381216';
+          fb.style.border = '2px solid var(--red)';
+          fb.style.color = '#ffccd5';
+          fb.innerHTML = `
+            <strong style="color:var(--red); font-size:1.05rem; display:block; margin-bottom:4px;">¡TIEMPO AGOTADO (30S)! LA FLECHA CAYÓ EN RECÁMARA CON BALA</strong>
+            <div style="font-weight:bold; font-size:0.95rem; margin-bottom:8px; color:#fff;">¡HAS SIDO DESCALIFICADO/A! (0 VIDAS RESTANTES)</div>
+            Se agotó el tiempo de 30 segundos sin responder. La indecisión ante la agresión permite que el peligro avance hasta disparar el arma.
+            <br><br>
+            <strong style="color:var(--gold); font-size:1.05rem;">PUNTUACIÓN FINAL ACUMULADA: ${puntosEquipo} PTS</strong><br>
+            <small style="color:#aaa;">Has quedado eliminado/a y no puedes acumular más puntos en las siguientes rondas.</small>
+            <div class="closing-reflection" style="margin-top:10px;">
+              <strong style="color:var(--gold); display:block; margin-bottom:4px;">REFLEXIÓN DE MARVEL MORENO ("EL REVÓLVER"):</strong>
+              "En el cuento de Marvel Moreno, ceder ante el maltrato y guardar silencio es ir cargando el revólver bala por bala. La ruleta rusa relacional no da segundas oportunidades: tolerar la violencia termina disparando el arma. Ana María entendió que la única forma de salvarse era poner un límite firme e inquebrantable."
+            </div>
+          `;
+          document.getElementById('btn-next').style.display = 'none';
+        } else {
+          audio.playClick();
+          document.getElementById('btn-next').style.display = 'block';
+
+          fb.style.background = '#2b2310';
+          fb.style.border = '1px solid var(--gold)';
+          fb.style.color = '#ffe082';
+          fb.innerHTML = `
+            <b>¡TIEMPO AGOTADO (30S)! LA FLECHA CAYÓ EN RECÁMARA VACÍA</b><br>
+            Se agotó el tiempo de 30 segundos sin responder. El revólver giró por indecisión pero la recámara en la flecha estaba vacía.<br><br>
+            <small>Se cargó 1 bala extra al tambor por no responder a tiempo. El tambor ahora tiene ${balasEnTambor} balas.</small>
+          `;
+        }
+
+        const teamSnapshot = {
+          id: equipoActualId,
+          name: nombreEquipo,
+          hearts: corazonesRestantes,
+          bullets: balasEnTambor,
+          score: puntosEquipo,
+          currentCase: rondaActual + 1,
+          status: newStatus,
+          updatedAt: Date.now()
+        };
+        liveTeamsState[equipoActualId] = teamSnapshot;
+        saveLocalTeamsState();
+        renderLiveLeaderboardTable();
+
+        publishRealtimeUpdate({
+          type: 'TEAM_UPDATE',
+          teamId: equipoActualId,
+          teamState: teamSnapshot
+        });
+      });
     }
 
     function mostrarRonda() {
@@ -1209,7 +1259,8 @@
           hearts: 0,
           bullets: balasEnTambor,
           score: puntosEquipo,
-          status: "COLAPSO TOTAL"
+          currentCase: Math.min(6, rondaActual + 1),
+          status: "DESCALIFICADO (BANG!)"
         };
         liveTeamsState[equipoActualId] = teamSnapshot;
         saveLocalTeamsState();
@@ -1221,11 +1272,16 @@
           teamState: teamSnapshot
         });
 
-        document.getElementById('case-title').innerText = "LA RELACIÓN HA COLAPSADO";
+        document.getElementById('case-title').innerText = "HAS SIDO DESCALIFICADO/A";
         document.getElementById('case-desc').innerHTML = `
-          Se agotaron las 3 vidas de salud emocional. Ceder ante la manipulación acumuló demasiadas balas y causó una agresión irreversible.
+          La recámara alineada con la flecha contenía una bala y el revólver se disparó.
           <br><br>
-          <strong>Puntuación Final:</strong> ${puntosEquipo} PTS.
+          <strong style="color:var(--gold); font-size:1.1rem;">PUNTUACIÓN FINAL ACUMULADA: ${puntosEquipo} PTS.</strong><br>
+          <i>No puedes seguir jugando ni acumulando más puntos.</i>
+          <div class="closing-reflection" style="margin-top:12px;">
+            <strong style="color:var(--gold); display:block; margin-bottom:6px;">REFLEXIÓN DE MARVEL MORENO ("EL REVÓLVER"):</strong>
+            "En el cuento de Marvel Moreno, ceder ante el maltrato y guardar silencio es ir cargando el revólver bala por bala. La ruleta rusa relacional no da segundas oportunidades: tolerar la violencia termina disparando el arma. Ana María entendió que la única forma de salvarse era poner un límite firme e inquebrantable."
+          </div>
         `;
         document.getElementById('actions-panel').style.display = 'none';
         document.getElementById('feedback-box').style.display = 'none';
@@ -1236,7 +1292,7 @@
       if (rondaActual >= situaciones.length) {
         detenerTimer();
         audio.playChime();
-        const bonoFinal = corazonesRestantes * 100;
+        const bonoFinal = 200;
         puntosEquipo += bonoFinal;
 
         const teamSnapshot = {
@@ -1245,6 +1301,7 @@
           hearts: corazonesRestantes,
           bullets: balasEnTambor,
           score: puntosEquipo,
+          currentCase: 6,
           status: "Sobrevivió"
         };
         liveTeamsState[equipoActualId] = teamSnapshot;
@@ -1257,12 +1314,12 @@
           teamState: teamSnapshot
         });
 
-        document.getElementById('case-title').innerText = "SOBREVIVISTE A LA RULETA";
+        document.getElementById('case-title').innerText = "SOBREVIVISTE A LA RULETA RUSA";
         document.getElementById('case-desc').innerHTML = `
-          Demostraron criterio pedagógico: en una relación abusiva, tolerar o ceder es jugar a la ruleta rusa. Poner límites contundentes e innegociables desarmó la violencia.
+          Demostraron un criterio pedagógico firme: en una relación abusiva, tolerar o ceder es jugar a la ruleta rusa. Poner límites contundentes e innegociables desarmó la violencia antes del colapso.
           <br><br>
-          <strong>Puntuación Final: ${puntosEquipo} PTS</strong> (Bono por ${corazonesRestantes} vidas preservadas).
-          <div class="closing-reflection">
+          <strong style="color:var(--gold); font-size:1.1rem;">PUNTUACIÓN FINAL OBTENIDA: ${puntosEquipo} PTS</strong> (Incluye bono por vida intacta).
+          <div class="closing-reflection" style="margin-top:12px;">
             <strong style="color:var(--gold); display:block; margin-bottom:6px;">CIERRE REFLEXIVO (MARVEL MORENO):</strong>
             "En el cuento de Marvel Moreno, Ana María estuvo jugando a la ruleta rusa cada vez que toleraba los maltratos de José Caicedo para cuidar las apariencias sociales, hasta que el carro casi la mata en el garaje. Solo cuando consiguió el revólver y puso un límite irreversible, logró vaciar el tambor y obligar al agresor a vivir con miedo durante treinta años."
           </div>
@@ -1295,6 +1352,25 @@
       document.getElementById('btn-next').style.display = 'none';
       document.getElementById('actions-panel').style.display = 'flex';
 
+      const teamSnapshot = {
+        id: equipoActualId,
+        name: nombreEquipo,
+        hearts: corazonesRestantes,
+        bullets: balasEnTambor,
+        score: puntosEquipo,
+        currentCase: rondaActual + 1,
+        status: "En Juego"
+      };
+      liveTeamsState[equipoActualId] = teamSnapshot;
+      saveLocalTeamsState();
+      renderLiveLeaderboardTable();
+
+      publishRealtimeUpdate({
+        type: 'TEAM_UPDATE',
+        teamId: equipoActualId,
+        teamState: teamSnapshot
+      });
+
       iniciarTimer();
     }
 
@@ -1303,24 +1379,22 @@
       document.getElementById('actions-panel').style.display = 'none';
       const fb = document.getElementById('feedback-box');
       fb.style.display = 'block';
-      document.getElementById('btn-next').style.display = 'block';
 
       const s = situaciones[rondaActual];
       const elegida = s.opciones[optIdx];
 
       if (!elegida.esLimiteFirme) {
-        balasEnTambor = Math.min(6, balasEnTambor + elegida.balasAdd);
+        balasEnTambor = Math.min(6, balasEnTambor + 1);
         actualizarTambor();
 
-        girarTambor(async () => {
-          const disparo = Math.random() < (balasEnTambor / 6);
+        girarTamborConResultado(async (disparo, slotAlineado) => {
           let newStatus = "CLIC (SALVADO)";
 
           if (disparo) {
             audio.playBang();
-            corazonesRestantes = Math.max(0, corazonesRestantes - 1);
+            corazonesRestantes = 0;
             actualizarCorazonesUI();
-            newStatus = corazonesRestantes > 0 ? "DISPARO (-1 VIDA)" : "COLAPSO TOTAL";
+            newStatus = "DESCALIFICADO (BANG!)";
 
             if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
             const f = document.getElementById('flash-screen');
@@ -1328,16 +1402,34 @@
             setTimeout(() => f.classList.remove('active'), 120);
 
             fb.style.background = '#381216';
-            fb.style.border = '1px solid var(--red)';
+            fb.style.border = '2px solid var(--red)';
             fb.style.color = '#ffccd5';
-            fb.innerHTML = `<b>¡BANG! EL DISPARO SE ACTIVÓ (PIERDEN 1 VIDA)</b><br>${elegida.explicacion}<br><br><small>Al responder mal, forzaron el giro del tambor y perdieron 1 vida. Quedan ${corazonesRestantes} vidas de salud relacional.</small>`;
+            fb.innerHTML = `
+              <strong style="color:var(--red); font-size:1.05rem; display:block; margin-bottom:4px;">¡BANG! LA FLECHA CAYÓ EN RECÁMARA CON BALA</strong>
+              <div style="font-weight:bold; font-size:0.95rem; margin-bottom:8px; color:#fff;">¡HAS SIDO DESCALIFICADO/A! (0 VIDAS RESTANTES)</div>
+              ${elegida.explicacion}
+              <br><br>
+              <strong style="color:var(--gold); font-size:1.05rem;">PUNTUACIÓN FINAL ACUMULADA: ${puntosEquipo} PTS</strong><br>
+              <small style="color:#aaa;">Has quedado eliminado/a y no puedes acumular más puntos en las siguientes rondas.</small>
+              <div class="closing-reflection" style="margin-top:10px;">
+                <strong style="color:var(--gold); display:block; margin-bottom:4px;">REFLEXIÓN DE MARVEL MORENO ("EL REVÓLVER"):</strong>
+                "En el cuento de Marvel Moreno, ceder ante el maltrato y guardar silencio es ir cargando el revólver bala por bala. La ruleta rusa relacional no da segundas oportunidades: tolerar la violencia termina disparando el arma. Ana María entendió que la única forma de salvarse era poner un límite firme e inquebrantable."
+              </div>
+            `;
+            document.getElementById('btn-next').style.display = 'none';
           } else {
             audio.playClick();
             puntosEquipo += 40;
+            document.getElementById('btn-next').style.display = 'block';
+
             fb.style.background = '#2b2310';
             fb.style.border = '1px solid var(--gold)';
             fb.style.color = '#ffe082';
-            fb.innerHTML = `<b>CLIC... SE SALVARON POR PURA SUERTE (+40 PTS)</b><br>${elegida.explicacion}<br><br><small>El revólver giró pero la recámara estaba vacía. El tambor queda cargado con ${balasEnTambor} balas para la siguiente ronda.</small>`;
+            fb.innerHTML = `
+              <b>CLIC... LA FLECHA CAYÓ EN RECÁMARA VACÍA (+40 PTS)</b><br>
+              ${elegida.explicacion}<br><br>
+              <small>Te salvaste por pura suerte. El tambor ahora tiene ${balasEnTambor} balas cargadas para la siguiente ronda.</small>
+            `;
           }
 
           const teamSnapshot = {
@@ -1346,7 +1438,9 @@
             hearts: corazonesRestantes,
             bullets: balasEnTambor,
             score: puntosEquipo,
-            status: newStatus
+            currentCase: rondaActual + 1,
+            status: newStatus,
+            updatedAt: Date.now()
           };
           liveTeamsState[equipoActualId] = teamSnapshot;
           saveLocalTeamsState();
@@ -1357,17 +1451,6 @@
             teamId: equipoActualId,
             teamState: teamSnapshot
           });
-
-          try {
-            await fetch('/api/team/action', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                teamId: equipoActualId,
-                teamState: teamSnapshot
-              })
-            });
-          } catch (e) {}
         });
 
       } else {
@@ -1375,41 +1458,35 @@
         puntosEquipo += 150;
         actualizarTambor();
 
-        girarTambor(async () => {
-          audio.playChime();
-          fb.style.background = '#0e2b24';
-          fb.style.border = '1px solid var(--green)';
-          fb.style.color = '#c7f9cc';
-          fb.innerHTML = `<b>RESPUESTA CORRECTA - LÍMITE FIRME (+150 PTS)</b><br>${elegida.explicacion}<br><br><small>Desarmaron la manipulación en seco, vaciaron 1 bala del tambor y protegieron sus vidas intactas.</small>`;
+        audio.playChime();
+        fb.style.background = '#0e2b24';
+        fb.style.border = '1px solid var(--green)';
+        fb.style.color = '#c7f9cc';
+        fb.innerHTML = `
+          <b>RESPUESTA CORRECTA - LÍMITE FIRME (+150 PTS)</b><br>
+          ${elegida.explicacion}<br><br>
+          <small>Desarmaste la manipulación en seco, vaciaste 1 bala del tambor y protegiste tu única vida intacta.</small>
+        `;
+        document.getElementById('btn-next').style.display = 'block';
 
-          const teamSnapshot = {
-            id: equipoActualId,
-            name: nombreEquipo,
-            hearts: corazonesRestantes,
-            bullets: balasEnTambor,
-            score: puntosEquipo,
-            status: "LÍMITE FIRME"
-          };
-          liveTeamsState[equipoActualId] = teamSnapshot;
-          saveLocalTeamsState();
-          renderLiveLeaderboardTable();
+        const teamSnapshot = {
+          id: equipoActualId,
+          name: nombreEquipo,
+          hearts: corazonesRestantes,
+          bullets: balasEnTambor,
+          score: puntosEquipo,
+          currentCase: rondaActual + 1,
+          status: "LÍMITE FIRME",
+          updatedAt: Date.now()
+        };
+        liveTeamsState[equipoActualId] = teamSnapshot;
+        saveLocalTeamsState();
+        renderLiveLeaderboardTable();
 
-          publishRealtimeUpdate({
-            type: 'TEAM_UPDATE',
-            teamId: equipoActualId,
-            teamState: teamSnapshot
-          });
-
-          try {
-            await fetch('/api/team/action', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                teamId: equipoActualId,
-                teamState: teamSnapshot
-              })
-            });
-          } catch (e) {}
+        publishRealtimeUpdate({
+          type: 'TEAM_UPDATE',
+          teamId: equipoActualId,
+          teamState: teamSnapshot
         });
       }
     }
