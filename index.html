@@ -1288,30 +1288,22 @@
         let updatedAny = false;
         Object.keys(statePayload.teams).forEach(k => {
           const sTeam = statePayload.teams[k];
-          const lTeam = liveTeamsState[k];
+          const lTeam = liveTeamsState[k] || {};
           if (sTeam) {
-            if (equipoActualId && String(k) === String(equipoActualId) && remotePhase === 'playing' && !isResetEvent) {
-              const sTime = sTeam.updatedAt || 0;
-              const lTime = lTeam ? (lTeam.updatedAt || 0) : 0;
-              const sCase = sTeam.currentCase || 1;
-              const lCase = lTeam ? (lTeam.currentCase || 1) : 1;
-              const sScore = sTeam.score || 0;
-              const lScore = lTeam ? (lTeam.score || 0) : 0;
+            const sTime = sTeam.updatedAt || 0;
+            const lTime = lTeam.updatedAt || 0;
+            const sCase = sTeam.currentCase || 1;
+            const lCase = lTeam.currentCase || 1;
+            const sScore = sTeam.score || 0;
+            const lScore = lTeam.score || 0;
 
-              if (sTime > lTime || sCase > lCase || (sScore > lScore && sCase >= lCase)) {
-                liveTeamsState[k] = sTeam;
-                updatedAny = true;
-              }
+            if (isResetEvent) {
+              liveTeamsState[k] = sTeam;
+              updatedAny = true;
             } else {
-              if (!lTeam || 
-                  lTeam.occupied !== sTeam.occupied || 
-                  lTeam.status !== sTeam.status || 
-                  lTeam.score !== sTeam.score || 
-                  lTeam.bullets !== sTeam.bullets ||
-                  lTeam.hearts !== sTeam.hearts ||
-                  lTeam.currentCase !== sTeam.currentCase ||
-                  lTeam.occupiedBy !== sTeam.occupiedBy) {
-                liveTeamsState[k] = sTeam;
+              // Conservar siempre el puntaje y avance más reciente o superior
+              if (sTime > lTime || sCase > lCase || sScore > lScore || (sTeam.occupied && !lTeam.occupied)) {
+                liveTeamsState[k] = { ...lTeam, ...sTeam };
                 updatedAny = true;
               }
             }
