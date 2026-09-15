@@ -143,6 +143,9 @@ const server = http.createServer((req, res) => {
 
         // Registrar voto
         gameState.votes[teamId] = targetId;
+        if (!gameState.allVotes) gameState.allVotes = [{}, {}, {}];
+        if (!gameState.allVotes[gameState.currentCaseIndex]) gameState.allVotes[gameState.currentCaseIndex] = {};
+        gameState.allVotes[gameState.currentCaseIndex][teamId] = targetId;
         broadcastState();
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -166,6 +169,7 @@ const server = http.createServer((req, res) => {
         gameState.phase = 'game';
         gameState.currentCaseIndex = 0;
         gameState.votes = {};
+        gameState.allVotes = [{}, {}, {}];
         gameState.revealDone = false;
       } else if (action === 'reveal') {
         gameState.revealDone = true;
@@ -175,12 +179,23 @@ const server = http.createServer((req, res) => {
           gameState.votes = {};
           gameState.revealDone = false;
         }
+      } else if (action === 'quick-advance') {
+        if (!gameState.revealDone) {
+          gameState.revealDone = true;
+        } else {
+          if (gameState.currentCaseIndex < 2) {
+            gameState.currentCaseIndex++;
+            gameState.votes = {};
+            gameState.revealDone = false;
+          }
+        }
       } else if (action === 'reset') {
         gameState = {
           phase: 'lobby',
           currentCaseIndex: 0,
           joinedTeams: {},
           votes: {},
+          allVotes: [{}, {}, {}],
           revealDone: false,
           adminConnected: false
         };

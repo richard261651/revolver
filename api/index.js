@@ -8,19 +8,22 @@ app.use(express.json());
 
 const INFILTRADOS = ["3", "6"];
 
-// 3 Casos Fijos Sintéticos y Rápida Lectura
+// 3 Casos Fijos Sintéticos con Pistas Secretas para Infiltrados
 const CASOS_FIJOS = [
   {
     titulo: "Caso 1: Apariencias y Redes",
-    desc: "Una pareja finge amor idílico en redes pero oculta maltrato e infidelidad. El entorno pide no hacer escándalo. ¿Confrontar de frente o guardar silencio?"
+    desc: "Una pareja finge amor idílico en redes pero oculta maltrato e infidelidad. El entorno pide no hacer escándalo. ¿Confrontar de frente o guardar silencio?",
+    pistaImpostor: "💡 Argumenten que lo que ocurre en la pareja es privado y que denunciar públicamente o hacer escándalo arruina la estabilidad familiar."
   },
   {
     titulo: "Caso 2: Lujos y Falsa Reparación",
-    desc: "Tras una agresión física, el agresor regaló joyas cara y teléfonos para 'comprar' el perdón. ¿Aceptar lujos equivale a saldar el maltrato?"
+    desc: "Tras una agresión física, el agresor regaló joyas caras y teléfonos para 'comprar' el perdón. ¿Aceptar lujos equivale a saldar el maltrato?",
+    pistaImpostor: "💡 Sostengan que los regalos costosos demuestran arrepentimiento real y la intención sincera del agresor de reparar las cosas."
   },
   {
     titulo: "Caso 3: La Amenaza Velada (El Revólver)",
-    desc: "Consigues un arma/prueba decisiva. ¿Es mejor la venganza pública inmediata o la amenaza en silencio para lograr disuasión constante?"
+    desc: "Consigues un arma/prueba decisiva. ¿Es mejor la venganza pública inmediata o la amenaza en silencio para lograr disuasión constante?",
+    pistaImpostor: "💡 Defiendan que mantener la amenaza guardada sin usarla genera una 'tregua en paz' disuasiva y prudente que evita tragedias."
   }
 ];
 
@@ -29,6 +32,7 @@ let gameState = {
   currentCaseIndex: 0,
   joinedTeams: {},
   votes: {},
+  allVotes: [{}, {}, {}],
   revealDone: false,
   casos: CASOS_FIJOS
 };
@@ -72,6 +76,10 @@ app.post('/api/vote', (req, res) => {
   }
 
   gameState.votes[teamId] = targetId;
+  if (!gameState.allVotes) gameState.allVotes = [{}, {}, {}];
+  if (!gameState.allVotes[gameState.currentCaseIndex]) gameState.allVotes[gameState.currentCaseIndex] = {};
+  gameState.allVotes[gameState.currentCaseIndex][teamId] = targetId;
+
   return res.json({ success: true });
 });
 
@@ -83,6 +91,7 @@ app.post('/api/admin/:action', (req, res) => {
     gameState.phase = 'game';
     gameState.currentCaseIndex = 0;
     gameState.votes = {};
+    gameState.allVotes = [{}, {}, {}];
     gameState.revealDone = false;
   } else if (action === 'reveal') {
     gameState.revealDone = true;
@@ -115,6 +124,7 @@ app.post('/api/admin/:action', (req, res) => {
       currentCaseIndex: 0,
       joinedTeams: {},
       votes: {},
+      allVotes: [{}, {}, {}],
       revealDone: false,
       casos: CASOS_FIJOS
     };

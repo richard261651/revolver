@@ -504,15 +504,18 @@
     const casosFijos = [
       {
         titulo: "Caso 1: Apariencias y Redes",
-        desc: "Una pareja finge amor idílico en redes pero oculta maltrato e infidelidad. El entorno pide no hacer escándalo. ¿Confrontar de frente o guardar silencio?"
+        desc: "Una pareja finge amor idílico en redes pero oculta maltrato e infidelidad. El entorno pide no hacer escándalo. ¿Confrontar de frente o guardar silencio?",
+        pistaImpostor: "💡 Argumenten que lo que ocurre en la pareja es privado y que denunciar públicamente o hacer escándalo arruina la estabilidad familiar."
       },
       {
         titulo: "Caso 2: Lujos y Falsa Reparación",
-        desc: "Tras una agresión física, el agresor regaló joyas caras y teléfonos para 'comprar' el perdón. ¿Aceptar lujos equivale a saldar el maltrato?"
+        desc: "Tras una agresión física, el agresor regaló joyas caras y teléfonos para 'comprar' el perdón. ¿Aceptar lujos equivale a saldar el maltrato?",
+        pistaImpostor: "💡 Sostengan que los regalos costosos demuestran arrepentimiento real y la intención sincera del agresor de reparar las cosas."
       },
       {
         titulo: "Caso 3: La Amenaza Velada (El Revólver)",
-        desc: "Consigues un arma/prueba decisiva. ¿Es mejor la venganza pública inmediata o la amenaza en silencio para lograr disuasión constante?"
+        desc: "Consigues un arma/prueba decisiva. ¿Es mejor la venganza pública inmediata o la amenaza en silencio para lograr disuasión constante?",
+        pistaImpostor: "💡 Defiendan que mantener la amenaza guardada sin usarla genera una 'tregua en paz' disuasiva y prudente que evita tragedias."
       }
     ];
 
@@ -767,29 +770,48 @@
           } else {
             if (currentIdx < 2) {
               btnExpress.textContent = `⚡ PASAR AL CASO ${currentIdx + 2} ▶`;
+
+              let revealHTML = `
+                <div style="background:rgba(255,183,3,0.12); border:2px solid var(--accent-gold); padding:14px; border-radius:12px; color:#fff; text-align:left;">
+                  <strong style="color:var(--accent-gold); font-size:1.05rem;">📊 VOTOS EMITIDOS EN EL CASO ${currentIdx + 1}:</strong><br>
+                  <span style="font-size:0.8rem; color:var(--text-muted);">🔒 Las identidades de los Infiltrados permanecen secretas hasta el final del Caso 3.</span><br><br>
+                  <strong>ACUSACIONES DE LA RESISTENCIA:</strong><br>
+              `;
+
+              resistenciaTeams.forEach(tid => {
+                const vTarget = serverState.votes[tid];
+                if (vTarget) {
+                  revealHTML += `<div>• Equipo ${tid} acusó al <strong>Equipo ${vTarget}</strong> 🔍</div>`;
+                } else {
+                  revealHTML += `<div>• Equipo ${tid}: <em>Sin voto</em></div>`;
+                }
+              });
+
+              revealHTML += `</div>`;
+              revealPanel.innerHTML = revealHTML;
             } else {
               btnExpress.textContent = `🏆 ACTIVIDAD CONCLUIDA (REINICIAR)`;
+
+              let revealHTML = `
+                <div style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); padding:16px; border-radius:12px; color:#ffccd5; text-align:left;">
+                  <strong style="color:var(--accent-gold); font-size:1.15rem;">🏆 REVELACIÓN FINAL DE LA ACTIVIDAD:</strong><br><br>
+                  🚨 <strong>¡LOS 2 INFILTRADOS ENCUBIERTOS ERAN LOS EQUIPOS 3 Y 6!</strong><br><br>
+                  📊 <strong>VOTOS DE LA RESISTENCIA EN EL CASO FINAL:</strong><br>
+              `;
+
+              resistenciaTeams.forEach(tid => {
+                const vTarget = serverState.votes[tid];
+                if (vTarget) {
+                  const isAccurate = INFILTRADOS.includes(vTarget);
+                  revealHTML += `<div>• Equipo ${tid} acusó al <strong>Equipo ${vTarget}</strong> ${isAccurate ? '🎯 (¡DESMASCARADO!)' : '❌ (Fallo)'}</div>`;
+                } else {
+                  revealHTML += `<div>• Equipo ${tid}: <em>Sin voto</em></div>`;
+                }
+              });
+
+              revealHTML += `</div>`;
+              revealPanel.innerHTML = revealHTML;
             }
-
-            let revealHTML = `
-              <div style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); padding:14px; border-radius:12px; color:#ffccd5; text-align:left;">
-                <strong style="color:var(--accent-gold); font-size:1.05rem;">🎯 REVELACIÓN RÁPIDA DE VOTOS:</strong><br><br>
-                🚨 <strong>INFILTRADOS DEL AULA:</strong> Equipos 3 y 6.<br><br>
-                📊 <strong>VOTOS DE RESISTENCIA:</strong><br>
-            `;
-
-            resistenciaTeams.forEach(tid => {
-              const vTarget = serverState.votes[tid];
-              if (vTarget) {
-                const isAccurate = INFILTRADOS.includes(vTarget);
-                revealHTML += `<div>• Equipo ${tid} acusó al <strong>Equipo ${vTarget}</strong> ${isAccurate ? '🎯 (¡ACERTO!)' : '❌ (Fallo)'}</div>`;
-              } else {
-                revealHTML += `<div>• Equipo ${tid}: <em>Sin voto</em></div>`;
-              }
-            });
-
-            revealHTML += `</div>`;
-            revealPanel.innerHTML = revealHTML;
           }
         }
       }
@@ -829,7 +851,7 @@
             const complice = myTeamId === "3" ? "Equipo 6" : "Equipo 3";
             roleCard.className = 'role-card impostor';
             roleCard.innerHTML = `<strong>🤫 ERES UN INFILTRADO (Cómplice del Agresor):</strong><br>
-            Defiende sutilmente al agresor en el debate.<br>👉 Tu cómplice es el <strong>${complice}</strong>.`;
+            Defiende sutilmente al agresor en el debate sin revelar tu identidad.<br>👉 Tu cómplice en la clase es el <strong>${complice}</strong>.`;
           } else {
             roleCard.className = 'role-card aliado';
             roleCard.innerHTML = `<strong>🛡️ ERES DE LA RESISTENCIA (Cero Tolerancia):</strong><br>
@@ -847,10 +869,13 @@
 
           if (isImpostor) {
             voteWrapper.innerHTML = `
-              <div style="background:rgba(239,35,60,0.12); border:1.5px dashed var(--accent-red); padding:14px; border-radius:12px; color:#ffccd5;">
-                <strong style="color:var(--accent-red);">🎭 MANTÉN EL CAMUFLAJE:</strong><br>
-                Como infiltrado, <strong>no puedes votar</strong> para no delatarte.<br><br>
-                👉 <strong>¡ACTÚEN!</strong> Finjan en su grupo que están analizando la pantalla y discutiendo a quién acusar para engañar al salón.
+              <div style="background:rgba(239,35,60,0.14); border:1.5px dashed var(--accent-red); padding:16px; border-radius:12px; color:#ffccd5; text-align:left;">
+                <strong style="color:var(--accent-gold); font-size:0.95rem;">💡 PISTA SECRETA DE DEBATE (CASO ${currentIdx + 1}):</strong>
+                <p style="margin-top:6px; font-size:0.88rem; line-height:1.4; color:#fff;">${caso.pistaImpostor || ''}</p>
+                <hr style="border-color:rgba(239,35,60,0.3); margin:10px 0;">
+                <div style="font-size:0.82rem; color:#ffccd5;">
+                  🎭 <strong>¡ACTÚEN EN SU GRUPO!</strong> Como infiltrados <strong>no pueden votar</strong> para no delatarse. Finjan en su grupo que están analizando la pantalla para despistar a los demás.
+                </div>
               </div>
             `;
             feedbackBox.innerHTML = '';
@@ -876,16 +901,25 @@
                   <div class="spin-pulse">🗳️</div>
                   <div style="font-weight:bold; color:var(--accent-gold);">Voto Registrado para Equipo ${myVote}</div>
                   <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">
-                    Esperando a que el Admin revele los resultados a toda la clase en el proyector...
+                    Esperando a que el Admin revele los resultados en el proyector...
                   </p>
                 </div>
               `;
             } else if (myVote && serverState.revealDone) {
-              const isCorrect = INFILTRADOS.includes(myVote);
-              if (isCorrect) {
-                feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(6,214,160,0.15); border:1.5px solid var(--accent-green); color:var(--accent-green); margin-top:14px;">🎯 ¡ACERTASTE! El Equipo ${myVote} es un infiltrado del agresor.</div>`;
+              if (currentIdx < 2) {
+                feedbackBox.innerHTML = `
+                  <div class="waiting-box" style="background:rgba(255,183,3,0.12); border:1.5px solid var(--accent-gold); color:var(--accent-gold); margin-top:14px;">
+                    🔍 <strong>Voto para Equipo ${myVote} registrado</strong><br>
+                    <span style="font-size:0.85rem; color:#fff;">Resultados mostrados en la pantalla central. ¡Los Infiltrados permanecen ocultos hasta el Caso 3!</span>
+                  </div>
+                `;
               } else {
-                feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(239,35,60,0.15); border:1.5px solid var(--accent-red); color:#ff85a1; margin-top:14px;">❌ FALLASTE: El Equipo ${myVote} era un aliado. Los infiltrados eran los Equipos 3 y 6.</div>`;
+                const isCorrect = INFILTRADOS.includes(myVote);
+                if (isCorrect) {
+                  feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(6,214,160,0.15); border:1.5px solid var(--accent-green); color:var(--accent-green); margin-top:14px;">🎯 ¡DESMASCARADO! El Equipo ${myVote} era un Infiltrado. Los Infiltrados eran los Equipos 3 y 6.</div>`;
+                } else {
+                  feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(239,35,60,0.15); border:1.5px solid var(--accent-red); color:#ff85a1; margin-top:14px;">❌ FALLASTE: El Equipo ${myVote} era un aliado. Los Infiltrados eran los Equipos 3 y 6.</div>`;
+                }
               }
             } else {
               feedbackBox.innerHTML = '';
