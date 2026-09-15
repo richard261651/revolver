@@ -41,7 +41,7 @@ function compactEncode(fullState) {
     ];
   });
   return {
-    r: fullState.resetCounter || 0,
+    r: fullState.resetCounter || Date.now(),
     u: fullState.updatedAt || Date.now(),
     t: compactTeams
   };
@@ -75,7 +75,7 @@ function compactDecode(compactState) {
 
 let inMemoryState = {
   phase: 'playing',
-  resetCounter: 0,
+  resetCounter: Date.now(),
   teams: initialTeams(),
   updatedAt: 0
 };
@@ -104,7 +104,7 @@ async function saveRemoteState(newState) {
   };
   const compact = compactEncode(inMemoryState);
   try {
-    await fetch(SYNC_API_URL, {
+    await fetch(SYNC_OBJECT_ID ? SYNC_API_URL : '', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -125,11 +125,10 @@ app.get('/api/state', async (req, res) => {
 });
 
 app.post('/api/admin/reset', async (req, res) => {
-  const currentState = await fetchRemoteState();
   const newTeams = initialTeams();
   const newState = {
     phase: 'playing',
-    resetCounter: (currentState.resetCounter || 0) + 1,
+    resetCounter: Date.now(),
     teams: newTeams,
     updatedAt: Date.now()
   };
@@ -144,7 +143,7 @@ app.post('/api/team/action', async (req, res) => {
   if (type === 'RESET_ALL') {
     const newState = {
       phase: 'playing',
-      resetCounter: (currentState.resetCounter || 0) + 1,
+      resetCounter: Date.now(),
       teams: initialTeams(),
       updatedAt: Date.now()
     };

@@ -1082,7 +1082,7 @@
       let statePayload = null;
 
       try {
-        const resState = await fetch('/api/state', { signal: AbortSignal.timeout(2500) });
+        const resState = await fetch('/api/state', { signal: AbortSignal.timeout(2000) });
         if (resState.ok) {
           const contentType = resState.headers.get('content-type') || '';
           if (contentType.includes('json')) {
@@ -1093,7 +1093,7 @@
 
       if (!statePayload || !statePayload.teams) {
         try {
-          const resCloud = await fetch(SYNC_CLOUD_URL, { signal: AbortSignal.timeout(2500) });
+          const resCloud = await fetch(SYNC_CLOUD_URL, { signal: AbortSignal.timeout(2000) });
           if (resCloud.ok) {
             const remote = await resCloud.json();
             if (remote && remote.data && remote.data.raw) {
@@ -1105,23 +1105,14 @@
       }
 
       if (statePayload) {
-        if (statePayload.resetCounter !== undefined && statePayload.resetCounter > lastResetCounter) {
+        const isResetEvent = (statePayload.resetCounter !== undefined && statePayload.resetCounter > lastResetCounter);
+
+        if (isResetEvent) {
           lastResetCounter = statePayload.resetCounter;
           localStorage.setItem('revolver_last_reset', String(lastResetCounter));
-          
           liveTeamsState = defaultTeams();
           saveLocalTeamsState();
           renderLiveLeaderboardTable();
-
-          const gameView = document.getElementById('box-game-view');
-          if (gameView && gameView.style.display !== 'none' && equipoActualId) {
-            detenerTimer();
-            equipoActualId = null;
-            gameView.style.display = 'none';
-            document.getElementById('box-team-login').style.display = 'block';
-            renderTeamSelectOptions();
-            alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
-          }
         } else if (statePayload.teams) {
           let updatedAny = false;
           Object.keys(statePayload.teams).forEach(k => {
@@ -1143,6 +1134,25 @@
           if (updatedAny) {
             saveLocalTeamsState();
             renderLiveLeaderboardTable();
+          }
+        }
+
+        // COMPROBACIÓN DE DESCONEXIÓN / REINICIO PARA PARTICIPANTES:
+        // Si el participante está dentro del juego, pero el juego fue reiniciado o su equipo ya no figura en juego
+        const gameView = document.getElementById('box-game-view');
+        const isInGameView = gameView && gameView.style.display !== 'none';
+
+        if (isInGameView && equipoActualId) {
+          const myTeamState = liveTeamsState[equipoActualId];
+          const isMyTeamReset = isResetEvent || !myTeamState || !myTeamState.occupied || myTeamState.status === "En Espera";
+
+          if (isMyTeamReset) {
+            detenerTimer();
+            equipoActualId = null;
+            gameView.style.display = 'none';
+            document.getElementById('box-team-login').style.display = 'block';
+            renderTeamSelectOptions();
+            alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
           }
         }
       }
@@ -1215,7 +1225,7 @@
 
     async function adminResetAll() {
       if (confirm("¿Reiniciar la tabla de posiciones y restablecer los 6 equipos a 1 vida inicial?")) {
-        lastResetCounter++;
+        lastResetCounter = Date.now();
         localStorage.setItem('revolver_last_reset', String(lastResetCounter));
 
         liveTeamsState = defaultTeams();
@@ -1425,8 +1435,11 @@
       audio.playSpin();
       const selectedSlot = Math.floor(Math.random() * 6);
       
-      const degreesForSlot = (360 - (selectedSlot * 60)) % 360;
-      angulo += 1080 + degreesForSlot;
+      const currentMod = angulo % 360;
+      const targetMod = (360 - (selectedSlot * 60)) % 360;
+      const additionalDeg = (targetMod - currentMod + 360) % 360;
+      
+      angulo += 1080 + additionalDeg;
       
       const tamborEl = document.getElementById('tambor');
       if (tamborEl) tamborEl.style.transform = `rotate(${angulo}deg)`;
