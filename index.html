@@ -451,6 +451,9 @@
         🔒 Dispositivo vinculado.<br>Esperando a que el Presentador inicie la actividad...
       </p>
     </div>
+    <button class="btn-secondary" onclick="abandonarEquipo()" style="margin-top: 14px;">
+      🚪 Salir / Cambiar de Equipo
+    </button>
   </div>
 
   <!-- JUEGO CLIENTE -->
@@ -568,6 +571,16 @@
       syncVercelState();
     }
 
+    function abandonarEquipo() {
+      myTeamId = null;
+      myVocero = '';
+      localStorage.removeItem('revolver_team_id');
+      localStorage.removeItem('revolver_vocero');
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.getElementById('box-team-login').style.display = 'block';
+      updateUI();
+    }
+
     function entrarComoEquipo() {
       isAdmin = false;
       document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
@@ -575,6 +588,10 @@
       if (myTeamId && serverState.joinedTeams[myTeamId] && serverState.joinedTeams[myTeamId].deviceId === myDeviceId) {
         updateUI();
       } else {
+        myTeamId = null;
+        myVocero = '';
+        localStorage.removeItem('revolver_team_id');
+        localStorage.removeItem('revolver_vocero');
         document.getElementById('box-team-login').style.display = 'block';
       }
     }
@@ -779,6 +796,19 @@
 
       // --- VISTA ESTUDIANTE ---
       if (!isAdmin && myTeamId) {
+        // DETECTAR SI EL SERVIDOR REINICIÓ EL LOBBY O LIBERÓ ESTE EQUIPO
+        const teamInfo = serverState.joinedTeams ? serverState.joinedTeams[myTeamId] : null;
+        if (serverState.phase === 'lobby' && (!teamInfo || teamInfo.deviceId !== myDeviceId)) {
+          myTeamId = null;
+          myVocero = '';
+          localStorage.removeItem('revolver_team_id');
+          localStorage.removeItem('revolver_vocero');
+          document.getElementById('box-team-waiting').style.display = 'none';
+          document.getElementById('box-team-game').style.display = 'none';
+          document.getElementById('box-team-login').style.display = 'block';
+          return;
+        }
+
         document.getElementById('box-role-select').style.display = 'none';
         document.getElementById('box-team-login').style.display = 'none';
 

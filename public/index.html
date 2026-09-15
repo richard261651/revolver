@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Revólver: Modo Kahoot Express</title>
+  <title>El Revólver: Modo Kahoot Express (Equipos Bloqueados)</title>
   
   <meta name="theme-color" content="#0d0e12">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -100,6 +100,11 @@
       background: #1f2233;
       border: 1px solid #3d405b;
       color: #fff;
+    }
+
+    option:disabled {
+      color: #ef233c;
+      background: #12131c;
     }
 
     input:focus, select:focus {
@@ -401,9 +406,8 @@
         </div>
       </div>
 
-      <!-- BOTÓN EXPRESS: COMBINA REVELAR Y AVANZAR EN 1 SOLO CLIC -->
       <button class="btn-express" id="btn-admin-express" onclick="adminQuickAdvance()" style="margin-top: 14px; padding: 16px;">
-        ⚡ REVELAR VOTOS Y PASAR AL SIGUIENTE
+        ⚡ REVELAR RESULTADOS Y PASAR AL SIGUIENTE
       </button>
 
       <div id="admin-reveal-panel" style="margin-top: 14px;"></div>
@@ -415,20 +419,20 @@
   <!-- VISTA ESTUDIANTE -->
   <div class="panel" id="box-team-login" style="display:none;">
     <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-purple); letter-spacing:1px; margin-bottom:4px;">
-      📱 REGISTRO DE EQUIPO (1 DISPOSITIVO)
+      📱 REGISTRO DE EQUIPO (1 DISPOSITIVO POR GRUPO)
     </div>
 
     <div style="font-size: 0.85rem; color: var(--text-muted); margin-top:6px;">
-      Selecciona tu grupo. Cada equipo solo puede registrar 1 celular:
+      Selecciona tu grupo. Los equipos ocupados por otro teléfono están bloqueados:
     </div>
 
     <select id="sel-team-id">
-      <option value="1">Equipo 1</option>
-      <option value="2">Equipo 2</option>
-      <option value="3">Equipo 3</option>
-      <option value="4">Equipo 4</option>
-      <option value="5">Equipo 5</option>
-      <option value="6">Equipo 6</option>
+      <option value="1">Equipo 1 (DISPONIBLE)</option>
+      <option value="2">Equipo 2 (DISPONIBLE)</option>
+      <option value="3">Equipo 3 (DISPONIBLE)</option>
+      <option value="4">Equipo 4 (DISPONIBLE)</option>
+      <option value="5">Equipo 5 (DISPONIBLE)</option>
+      <option value="6">Equipo 6 (DISPONIBLE)</option>
     </select>
 
     <input type="text" id="input-vocero-name" placeholder="Nombre del Vocero Oficial" required autocomplete="off">
@@ -449,9 +453,12 @@
       <h3 style="font-size: 1.1rem; margin-bottom: 6px;">¡Registrado con Éxito!</h3>
       <div id="client-team-label" style="font-weight: bold; color: #fff; margin-bottom: 8px;"></div>
       <p style="font-size: 0.85rem; color: var(--text-muted);">
-        🔒 Dispositivo vinculado.<br>Esperando a que el Presentador inicie la actividad...
+        🔒 Dispositivo vinculado a este equipo.<br>Esperando a que el Presentador inicie la actividad...
       </p>
     </div>
+    <button class="btn-secondary" onclick="abandonarEquipo()" style="margin-top: 14px;">
+      🚪 Salir / Cambiar de Equipo
+    </button>
   </div>
 
   <!-- JUEGO CLIENTE -->
@@ -569,6 +576,16 @@
       syncVercelState();
     }
 
+    function abandonarEquipo() {
+      myTeamId = null;
+      myVocero = '';
+      localStorage.removeItem('revolver_team_id');
+      localStorage.removeItem('revolver_vocero');
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.getElementById('box-team-login').style.display = 'block';
+      updateUI();
+    }
+
     function entrarComoEquipo() {
       isAdmin = false;
       document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
@@ -576,6 +593,10 @@
       if (myTeamId && serverState.joinedTeams[myTeamId] && serverState.joinedTeams[myTeamId].deviceId === myDeviceId) {
         updateUI();
       } else {
+        myTeamId = null;
+        myVocero = '';
+        localStorage.removeItem('revolver_team_id');
+        localStorage.removeItem('revolver_vocero');
         document.getElementById('box-team-login').style.display = 'block';
       }
     }
@@ -650,9 +671,8 @@
     async function adminQuickAdvance() {
       await fetch('/api/admin/quick-advance', { method: 'POST' });
       if (!serverState.revealDone) {
-        // Just revealed, leave timer
+        // Just revealed
       } else {
-        // Advanced to next case, restart timer
         startCaseTimer();
       }
       syncVercelState();
@@ -682,6 +702,24 @@
 
     function updateUI() {
       const listToUse = (serverState.casos && serverState.casos.length > 0) ? serverState.casos : casosFijos;
+
+      // ACTUALIZAR ESTADO DE BLOQUEO DE EQUIPOS EN EL DROPDOWN SELECT DEL ESTUDIANTE
+      const selectEl = document.getElementById('sel-team-id');
+      if (selectEl && serverState.joinedTeams) {
+        for (let i = 1; i <= 6; i++) {
+          const option = selectEl.querySelector(`option[value="${i}"]`);
+          const teamInfo = serverState.joinedTeams[String(i)];
+          if (option) {
+            if (teamInfo && teamInfo.deviceId !== myDeviceId) {
+              option.disabled = true;
+              option.textContent = `Equipo ${i} (🔒 OCUPADO por ${teamInfo.vocero})`;
+            } else {
+              option.disabled = false;
+              option.textContent = `Equipo ${i} ${teamInfo && teamInfo.deviceId === myDeviceId ? '(TU DISPOSITIVO)' : '(DISPONIBLE)'}`;
+            }
+          }
+        }
+      }
 
       // --- VISTA ADMIN ---
       if (isAdmin) {
@@ -781,6 +819,19 @@
 
       // --- VISTA ESTUDIANTE ---
       if (!isAdmin && myTeamId) {
+        // DETECTAR SI EL SERVIDOR REINICIÓ EL LOBBY O LIBERÓ ESTE EQUIPO
+        const teamInfo = serverState.joinedTeams ? serverState.joinedTeams[myTeamId] : null;
+        if (serverState.phase === 'lobby' && (!teamInfo || teamInfo.deviceId !== myDeviceId)) {
+          myTeamId = null;
+          myVocero = '';
+          localStorage.removeItem('revolver_team_id');
+          localStorage.removeItem('revolver_vocero');
+          document.getElementById('box-team-waiting').style.display = 'none';
+          document.getElementById('box-team-game').style.display = 'none';
+          document.getElementById('box-team-login').style.display = 'block';
+          return;
+        }
+
         document.getElementById('box-role-select').style.display = 'none';
         document.getElementById('box-team-login').style.display = 'none';
 
