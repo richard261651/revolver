@@ -441,7 +441,6 @@
       </div>
 
       <div style="margin-top: 12px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px;">
-        <div class="timer-badge" id="admin-timer-val">⏱️ 45s</div>
         <div style="font-size:0.85rem; color:var(--text-muted);" id="admin-votes-count">
           0 / 4 Votos de Resistencia Recibidos
         </div>
@@ -509,8 +508,9 @@
     <div id="client-role-card" class="role-card"></div>
 
     <div class="dilema-box">
-      <div class="tag" id="client-case-tag">CASO ACTUAL:</div>
-      <p id="client-case-desc"></p>
+      <div class="tag" id="client-case-tag">CASO 1 DE 3</div>
+      <h3 id="client-case-title" style="color:var(--accent-gold); font-size:1.05rem; margin-bottom:6px;"></h3>
+      <p id="client-case-desc" style="font-size:0.92rem; line-height:1.55; color:#fff;"></p>
     </div>
 
     <div style="margin-top: 14px; text-align: left;" id="client-voting-wrapper">
@@ -521,6 +521,7 @@
     <div id="client-vote-feedback"></div>
   </div>
 
+  <script src="js/components/audioFX.js"></script>
   <script src="js/components/qr.js"></script>
 
   <script>
@@ -535,8 +536,7 @@
     let myTeamId = localStorage.getItem('revolver_team_id') || null;
     let myVocero = localStorage.getItem('revolver_vocero') || '';
     let isAdmin = false;
-    let timerInterval = null;
-    let timerSeconds = 45;
+    let lastTurnTeamId = null;
 
     let serverState = {
       phase: 'lobby',
@@ -595,7 +595,7 @@
     function updateTimersDisplay() {
       const nowServer = Date.now() + timeOffset;
 
-      // 1. Contador de Turno de Habla (60s)
+      // Único Contador Oficial: Turno de Habla (60s por Grupo)
       if (serverState.turnEndsAt) {
         const turnMs = Math.max(0, serverState.turnEndsAt - nowServer);
         const turnSec = Math.ceil(turnMs / 1000);
@@ -604,15 +604,6 @@
         const studentEl = document.getElementById('student-turn-countdown');
         if (adminEl) adminEl.textContent = text;
         if (studentEl) studentEl.textContent = text;
-      }
-
-      // 2. Contador del Caso (45s)
-      if (serverState.caseEndsAt) {
-        const caseMs = Math.max(0, serverState.caseEndsAt - nowServer);
-        const caseSec = Math.ceil(caseMs / 1000);
-        const text = caseSec > 0 ? `⏱️ ${caseSec}s` : `⏱️ ¡TIEMPO CUMPLIDO!`;
-        const caseEl = document.getElementById('admin-timer-val');
-        if (caseEl) caseEl.textContent = text;
       }
     }
 
@@ -849,7 +840,7 @@
 
           if (lastTurnTeamId !== activeTurnTeam) {
             lastTurnTeamId = activeTurnTeam;
-            startTurnTimer();
+            if (window.audioController) window.audioController.playClick(750, 0.08);
           }
 
           const resistenciaTeams = ["1", "2", "4", "5"];
@@ -1070,7 +1061,7 @@
 
           if (lastTurnTeamId !== activeTurnTeam) {
             lastTurnTeamId = activeTurnTeam;
-            startTurnTimer();
+            if (window.audioController) window.audioController.playClick(750, 0.08);
           }
 
           const roleCard = document.getElementById('client-role-card');
@@ -1090,8 +1081,14 @@
           const currentIdx = Math.min(serverState.currentCaseIndex, 2);
           const caso = listToUse[currentIdx] || casosFijos[currentIdx];
 
-          document.getElementById('client-case-tag').innerText = `CASO ${currentIdx + 1} DE 3`;
-          document.getElementById('client-case-desc').innerText = caso.desc;
+          const clientTag = document.getElementById('client-case-tag');
+          if (clientTag) clientTag.innerText = `CASO ${currentIdx + 1} DE 3`;
+
+          const clientTitle = document.getElementById('client-case-title');
+          if (clientTitle) clientTitle.innerText = caso.titulo || `Caso ${currentIdx + 1}`;
+
+          const clientDesc = document.getElementById('client-case-desc');
+          if (clientDesc) clientDesc.innerText = caso.desc || '';
 
           const voteWrapper = document.getElementById('client-vote-buttons');
           const feedbackBox = document.getElementById('client-vote-feedback');
