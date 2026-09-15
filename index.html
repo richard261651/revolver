@@ -128,13 +128,6 @@
       letter-spacing: 1px;
     }
 
-    .btn-red {
-      background: var(--accent-red);
-      color: #fff;
-      border: none;
-      font-weight: 800;
-    }
-
     .btn-secondary {
       background: transparent;
       border: 1px solid var(--border);
@@ -262,12 +255,36 @@
       margin-top: 10px;
       display: none;
     }
+
+    .qr-hero-card {
+      background: rgba(255, 183, 3, 0.08);
+      border: 2px solid var(--accent-gold);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 0 25px rgba(255, 183, 3, 0.25);
+    }
+
+    .btn-copy {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 8px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>El Revólver<span>Servidor Real • 1 Dispositivo por Equipo</span></h1>
+    <h1>El Revólver<span>Plataforma Online Vercel</span></h1>
   </header>
 
   <!-- SELECCIÓN INICIAL -->
@@ -278,7 +295,7 @@
 
     <button class="btn-gold" onclick="entrarComoAdmin()" style="padding: 16px;">
       🖥️ PANEL DE ADMIN / PRESENTADOR<br>
-      <span style="font-size:0.75rem; font-weight:normal;">Ver QR, enlace de unión, controlar lobby y revelar votos</span>
+      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR, controlar lobby y revelar votos</span>
     </button>
 
     <button class="btn-main" onclick="entrarComoEquipo()" style="margin-top: 14px; padding: 16px;">
@@ -287,7 +304,7 @@
     </button>
   </div>
 
-  <!-- VISTA ADMIN / PRESENTADOR (PROYECTOR) -->
+  <!-- PANEL ADMIN -->
   <div class="panel" id="box-admin-panel" style="display:none;">
     <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-gold); letter-spacing:1px; margin-bottom:4px;">
       👑 PANEL DE CONTROL DE ADMIN
@@ -295,16 +312,17 @@
 
     <!-- ADMIN LOBBY -->
     <div id="admin-phase-lobby">
-      <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 12px; margin-top: 10px; display:flex; flex-direction:column; align-items:center;">
+      <div class="qr-hero-card">
         <div id="admin-qr-container" style="margin-bottom:8px;"></div>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">ENLACE DE UNIÓN PARA LOS EQUIPOS:</div>
-        <div style="font-size: 1.05rem; font-weight: 800; color: var(--accent-gold); margin-top:2px;" id="admin-url-text">
-          http://...
+        <div style="font-size: 0.85rem; font-weight: bold; color: var(--text-bright);">📱 ESCANEA PARA UNIRTE CON TU EQUIPO</div>
+        <div style="font-size: 0.88rem; font-weight: 800; color: var(--accent-gold); margin-top:4px; word-break: break-all;" id="admin-url-text">
+          https://...
         </div>
+        <button class="btn-copy" onclick="copiarEnlaceVercel()">📋 Copiar Enlace Directo</button>
       </div>
 
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 12px;">
-        Los equipos escanean el QR y se unen (1 dispositivo por equipo):
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 14px;">
+        Equipos Conectados (1 dispositivo por equipo):
       </p>
 
       <div class="teams-grid" id="admin-lobby-grid"></div>
@@ -345,14 +363,14 @@
     </div>
   </div>
 
-  <!-- VISTA ESTUDIANTE / EQUIPO (MÓVIL) -->
+  <!-- VISTA ESTUDIANTE -->
   <div class="panel" id="box-team-login" style="display:none;">
     <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-purple); letter-spacing:1px; margin-bottom:4px;">
-      📱 REGISTRO DE EQUIPO (UN SOLO DISPOSITIVO)
+      📱 REGISTRO DE EQUIPO (1 DISPOSITIVO)
     </div>
 
     <div style="font-size: 0.85rem; color: var(--text-muted); margin-top:6px;">
-      Selecciona tu número de grupo. Si ya fue registrado en otro teléfono, el sistema lo bloqueará:
+      Selecciona tu grupo. Cada equipo solo puede registrar 1 celular:
     </div>
 
     <select id="sel-team-id">
@@ -406,13 +424,11 @@
     <div id="client-vote-feedback"></div>
   </div>
 
-  <!-- Componente QR SVG local -->
-  <script src="js/components/qr.js"></script>
+  <script src="public/js/components/qr.js"></script>
 
   <script>
     const INFILTRADOS = ["3", "6"];
 
-    // Generar o recuperar Device ID único para este navegador/dispositivo
     let myDeviceId = localStorage.getItem('revolver_device_id');
     if (!myDeviceId) {
       myDeviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
@@ -422,9 +438,6 @@
     let myTeamId = localStorage.getItem('revolver_team_id') || null;
     let myVocero = localStorage.getItem('revolver_vocero') || '';
     let isAdmin = false;
-
-    let localIp = 'localhost';
-    let baseUrl = window.location.origin;
 
     let serverState = {
       phase: 'lobby',
@@ -449,38 +462,32 @@
       }
     ];
 
-    // Conectar a Server-Sent Events (SSE) para recibir cambios en tiempo real
-    function initRealtimeSync() {
-      const eventSource = new EventSource('/api/events');
-
-      eventSource.onmessage = (event) => {
-        try {
-          serverState = JSON.parse(event.data);
-          updateUI();
-        } catch (e) {
-          console.warn("Error parseando estado del servidor:", e);
-        }
-      };
-
-      eventSource.onerror = (err) => {
-        // Fallback polling si SSE se interrumpe
-        setTimeout(fetchState, 1500);
-      };
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('role') === 'student') {
+      setTimeout(() => entrarComoEquipo(), 100);
     }
 
-    async function fetchState() {
+    async function syncVercelState() {
       try {
         const res = await fetch('/api/state');
-        const data = await res.json();
-        serverState = data;
-        if (data.baseUrl) baseUrl = data.baseUrl;
-        updateUI();
+        if (res.ok) {
+          const data = await res.json();
+          serverState = data;
+          updateUI();
+        }
       } catch (e) {
-        console.warn("Error en fetchState:", e);
+        console.warn("Syncing state with Vercel:", e);
       }
     }
 
-    // Navegación
+    setInterval(syncVercelState, 1000);
+
+    function copiarEnlaceVercel() {
+      const studentUrl = window.location.origin + '?role=student';
+      navigator.clipboard.writeText(studentUrl);
+      alert('¡Enlace de estudiantes copiado al portapapeles!\n' + studentUrl);
+    }
+
     function volverASeleccion() {
       document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
       document.getElementById('box-role-select').style.display = 'block';
@@ -490,14 +497,13 @@
       isAdmin = true;
       document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
       document.getElementById('box-admin-panel').style.display = 'block';
-      fetchState();
+      syncVercelState();
     }
 
     function entrarComoEquipo() {
       isAdmin = false;
       document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
 
-      // Si ya está unido previamente en este dispositivo
       if (myTeamId && serverState.joinedTeams[myTeamId] && serverState.joinedTeams[myTeamId].deviceId === myDeviceId) {
         updateUI();
       } else {
@@ -505,7 +511,6 @@
       }
     }
 
-    // Acciones del Servidor para el Cliente
     async function joinTeamServer() {
       const teamId = document.getElementById('sel-team-id').value;
       const voceroInput = document.getElementById('input-vocero-name');
@@ -545,7 +550,7 @@
         localStorage.setItem('revolver_team_id', teamId);
         localStorage.setItem('revolver_vocero', vocero);
 
-        updateUI();
+        syncVercelState();
       } catch (e) {
         errorBox.style.display = 'block';
         errorBox.textContent = 'Error de conexión con el servidor.';
@@ -561,22 +566,25 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ teamId: myTeamId, targetId, deviceId: myDeviceId })
         });
+        syncVercelState();
       } catch (e) {
         console.warn("Error enviando voto:", e);
       }
     }
 
-    // Acciones de Admin en Servidor
     async function adminStartGame() {
       await fetch('/api/admin/start', { method: 'POST' });
+      syncVercelState();
     }
 
     async function adminRevealVotes() {
       await fetch('/api/admin/reveal', { method: 'POST' });
+      syncVercelState();
     }
 
     async function adminNextCase() {
       await fetch('/api/admin/next', { method: 'POST' });
+      syncVercelState();
     }
 
     async function adminResetLobby() {
@@ -586,10 +594,10 @@
         localStorage.removeItem('revolver_vocero');
         myTeamId = null;
         myVocero = '';
+        syncVercelState();
       }
     }
 
-    // Renderizador Central de Interfaz basado en el Estado Real del Servidor
     function updateUI() {
       // --- VISTA ADMIN ---
       if (isAdmin) {
@@ -599,10 +607,10 @@
 
           const qrBox = document.getElementById('admin-qr-container');
           const urlText = document.getElementById('admin-url-text');
-          const joinUrl = baseUrl;
+          const joinUrl = window.location.origin + '?role=student';
 
           if (qrBox && window.QRComponent) {
-            qrBox.innerHTML = QRComponent.renderSVG(joinUrl, 180);
+            qrBox.innerHTML = QRComponent.renderSVG(joinUrl, 220);
           }
           if (urlText) urlText.textContent = joinUrl;
 
@@ -763,9 +771,7 @@
       }
     }
 
-    // Inicializar sincronización al cargar
-    fetchState();
-    initRealtimeSync();
+    syncVercelState();
   </script>
 </body>
 </html>

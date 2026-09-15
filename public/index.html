@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Revólver: Despliegue Online Vercel</title>
+  <title>El Revólver: Control Real Admin & Equipos</title>
   
   <meta name="theme-color" content="#0d0e12">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -255,6 +255,30 @@
       margin-top: 10px;
       display: none;
     }
+
+    .qr-hero-card {
+      background: rgba(255, 183, 3, 0.08);
+      border: 2px solid var(--accent-gold);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 0 25px rgba(255, 183, 3, 0.25);
+    }
+
+    .btn-copy {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 8px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -288,16 +312,17 @@
 
     <!-- ADMIN LOBBY -->
     <div id="admin-phase-lobby">
-      <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 12px; margin-top: 10px; display:flex; flex-direction:column; align-items:center;">
+      <div class="qr-hero-card">
         <div id="admin-qr-container" style="margin-bottom:8px;"></div>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">ENLACE PÚBLICO PARA LOS EQUIPOS:</div>
-        <div style="font-size: 0.95rem; font-weight: 800; color: var(--accent-gold); margin-top:2px; word-break: break-all;" id="admin-url-text">
+        <div style="font-size: 0.85rem; font-weight: bold; color: var(--text-bright);">📱 ESCANEA PARA UNIRTE CON TU EQUIPO</div>
+        <div style="font-size: 0.88rem; font-weight: 800; color: var(--accent-gold); margin-top:4px; word-break: break-all;" id="admin-url-text">
           https://...
         </div>
+        <button class="btn-copy" onclick="copiarEnlaceVercel()">📋 Copiar Enlace Directo</button>
       </div>
 
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 12px;">
-        Escanea el QR o entra al enlace (1 dispositivo por equipo):
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 14px;">
+        Equipos Conectados (1 dispositivo por equipo):
       </p>
 
       <div class="teams-grid" id="admin-lobby-grid"></div>
@@ -345,7 +370,7 @@
     </div>
 
     <div style="font-size: 0.85rem; color: var(--text-muted); margin-top:6px;">
-      Selecciona tu número de grupo. Solo se permite 1 celular por equipo:
+      Selecciona tu grupo. Cada equipo solo puede registrar 1 celular:
     </div>
 
     <select id="sel-team-id">
@@ -437,7 +462,12 @@
       }
     ];
 
-    // Ultra-fast Polling for Vercel Serverless Sync
+    // Detectar si el enlace fue abierto escaneando QR con parámetro ?role=student
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('role') === 'student') {
+      setTimeout(() => entrarComoEquipo(), 100);
+    }
+
     async function syncVercelState() {
       try {
         const res = await fetch('/api/state');
@@ -451,8 +481,13 @@
       }
     }
 
-    // Poll every 1 second (1000ms) to ensure smooth real-time performance on Vercel
     setInterval(syncVercelState, 1000);
+
+    function copiarEnlaceVercel() {
+      const studentUrl = window.location.origin + '?role=student';
+      navigator.clipboard.writeText(studentUrl);
+      alert('¡Enlace de estudiantes copiado al portapapeles!\n' + studentUrl);
+    }
 
     function volverASeleccion() {
       document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
@@ -573,10 +608,10 @@
 
           const qrBox = document.getElementById('admin-qr-container');
           const urlText = document.getElementById('admin-url-text');
-          const joinUrl = window.location.origin;
+          const joinUrl = window.location.origin + '?role=student';
 
           if (qrBox && window.QRComponent) {
-            qrBox.innerHTML = QRComponent.renderSVG(joinUrl, 180);
+            qrBox.innerHTML = QRComponent.renderSVG(joinUrl, 220);
           }
           if (urlText) urlText.textContent = joinUrl;
 
