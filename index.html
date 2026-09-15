@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Revólver: Control Real Admin & Equipos</title>
+  <title>El Revólver: Casos Ilimitados & Control Real</title>
   
   <meta name="theme-color" content="#0d0e12">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -72,7 +72,7 @@
 
     .panel {
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -87,7 +87,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    input, select, button {
+    input, textarea, select, button {
       width: 100%;
       padding: 14px;
       border-radius: 10px;
@@ -96,13 +96,13 @@
       margin-top: 10px;
     }
 
-    input, select {
+    input, textarea, select {
       background: #1f2233;
       border: 1px solid #3d405b;
       color: #fff;
     }
 
-    input:focus, select:focus {
+    input:focus, textarea:focus, select:focus {
       outline: none;
       border-color: var(--accent-gold);
     }
@@ -279,12 +279,48 @@
       margin-top: 8px;
       font-weight: bold;
     }
+
+    .cases-bar-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+
+    .case-pill-btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      background: #1a1c2b;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      margin-top: 0;
+      width: auto;
+    }
+
+    .case-pill-btn.active-case {
+      background: var(--accent-gold);
+      color: #000;
+      border-color: var(--accent-gold);
+    }
+
+    .add-case-panel {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 14px;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>El Revólver<span>Plataforma Online Vercel</span></h1>
+    <h1>El Revólver<span>Casos Ilimitados & Control Admin Real</span></h1>
   </header>
 
   <!-- SELECCIÓN INICIAL -->
@@ -295,7 +331,7 @@
 
     <button class="btn-gold" onclick="entrarComoAdmin()" style="padding: 16px;">
       🖥️ PANEL DE ADMIN / PRESENTADOR<br>
-      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR, controlar lobby y revelar votos</span>
+      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR, agregar casos y controlar sala</span>
     </button>
 
     <button class="btn-main" onclick="entrarComoEquipo()" style="margin-top: 14px; padding: 16px;">
@@ -331,13 +367,27 @@
         🚀 INICIAR ACTIVIDAD (0/6 EQUIPOS)
       </button>
 
+      <div class="add-case-panel">
+        <div style="font-size: 0.88rem; font-weight: bold; color: var(--accent-gold); margin-bottom: 6px;">
+          ➕ CREAR NUEVO CASO DE DEBATE PERSONALIZADO
+        </div>
+        <input type="text" id="new-case-title" placeholder="Título del Caso (Ej. Caso 7: Chantaje en Redes)" autocomplete="off">
+        <textarea id="new-case-desc" rows="3" placeholder="Descripción del dilema ético para los grupos..."></textarea>
+        <button class="btn-main" onclick="adminAddCustomCase()" style="margin-top: 8px;">
+          💾 Agregar Caso al Banco de Debates
+        </button>
+      </div>
+
       <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Sala / Limpiar Equipos</button>
     </div>
 
     <!-- ADMIN GAME PANEL -->
     <div id="admin-phase-game" style="display:none;">
+      <div style="font-size: 0.8rem; color: var(--text-muted);">SELECCIONAR CASO EN PANTALLA CENTRAL:</div>
+      <div class="cases-bar-wrapper" id="admin-cases-nav-bar"></div>
+
       <div class="dilema-box">
-        <div class="tag" id="admin-case-tag">CASO 1 DE 3</div>
+        <div class="tag" id="admin-case-tag">CASO 1 DE 6</div>
         <h3 id="admin-case-title" style="color:var(--accent-gold); font-size:1.05rem; margin-bottom:6px;"></h3>
         <p id="admin-case-desc" style="font-size:0.95rem; line-height:1.5; color:#fff;"></p>
       </div>
@@ -355,9 +405,25 @@
 
       <div id="admin-reveal-panel" style="margin-top: 14px;"></div>
 
-      <button class="btn-main" id="btn-admin-next" onclick="adminNextCase()" style="margin-top: 14px; display:none;">
-        ⚡ SIGUIENTE CASO DE DEBATE
-      </button>
+      <div style="display: flex; gap: 8px; margin-top: 14px;">
+        <button class="btn-main" id="btn-admin-prev" onclick="adminPrevCase()" style="flex: 1;">
+          ◀ CASO ANTERIOR
+        </button>
+        <button class="btn-main" id="btn-admin-next" onclick="adminNextCase()" style="flex: 1;">
+          CASO SIGUIENTE ▶
+        </button>
+      </div>
+
+      <div class="add-case-panel" style="margin-top: 16px;">
+        <div style="font-size: 0.85rem; font-weight: bold; color: var(--accent-gold); margin-bottom: 6px;">
+          ➕ AGREGAR CASO ADICIONAL AHORA
+        </div>
+        <input type="text" id="new-case-title-game" placeholder="Título del nuevo caso" autocomplete="off">
+        <textarea id="new-case-desc-game" rows="2" placeholder="Descripción del dilema..."></textarea>
+        <button class="btn-gold" onclick="adminAddCustomCaseFromGame()" style="margin-top: 8px; font-size: 0.85rem; padding: 10px;">
+          ⚡ Añadir e Ir a este Caso
+        </button>
+      </div>
 
       <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Juego</button>
     </div>
@@ -444,23 +510,9 @@
       currentCaseIndex: 0,
       joinedTeams: {},
       votes: {},
-      revealDone: false
+      revealDone: false,
+      casos: []
     };
-
-    const casos = [
-      {
-        titulo: "Caso 1: La Fachada en Redes",
-        desc: "Una pareja finge amor idílico en redes sociales, pero descubres que hay agresión e infidelidad oculta. Al pedir explicaciones, te exigen guardar silencio por 'el qué dirán'. ¿Confrontar la farsa o mantener las apariencias del círculo?"
-      },
-      {
-        titulo: "Caso 2: Lujos y Falsa Reparación",
-        desc: "Tras un hecho de violencia física, el agresor intenta 'resarcir' el daño regalando artículos de lujo, joyas y pidiendo disculpas. ¿Aceptar la transferencia patrimonial equivale a perdonar el maltrato?"
-      },
-      {
-        titulo: "Caso 3: La Amenaza Velada (El Revólver)",
-        desc: "Consigues una prueba/arma objetiva con la que puedes neutralizar al agresor. ¿Es mejor ejecutar una venganza/disparo inmediato, o mantener la amenaza en silencio para garantizar disuasión constante sin derramar sangre?"
-      }
-    ];
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('role') === 'student') {
@@ -587,6 +639,70 @@
       syncVercelState();
     }
 
+    async function adminPrevCase() {
+      await fetch('/api/admin/prev', { method: 'POST' });
+      syncVercelState();
+    }
+
+    async function adminSelectCaseIndex(idx) {
+      const diff = idx - serverState.currentCaseIndex;
+      if (diff > 0) {
+        for (let i = 0; i < diff; i++) await adminNextCase();
+      } else if (diff < 0) {
+        for (let i = 0; i < Math.abs(diff); i++) await adminPrevCase();
+      }
+    }
+
+    async function adminAddCustomCase() {
+      const titleInput = document.getElementById('new-case-title');
+      const descInput = document.getElementById('new-case-desc');
+
+      const titulo = titleInput ? titleInput.value.trim() : '';
+      const desc = descInput ? descInput.value.trim() : '';
+
+      if (!titulo || !desc) {
+        alert("Por favor completa el título y la descripción del nuevo caso.");
+        return;
+      }
+
+      await fetch('/api/admin/add-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo, desc })
+      });
+
+      titleInput.value = '';
+      descInput.value = '';
+      alert("¡Nuevo caso añadido con éxito al banco de debates!");
+      syncVercelState();
+    }
+
+    async function adminAddCustomCaseFromGame() {
+      const titleInput = document.getElementById('new-case-title-game');
+      const descInput = document.getElementById('new-case-desc-game');
+
+      const titulo = titleInput ? titleInput.value.trim() : '';
+      const desc = descInput ? descInput.value.trim() : '';
+
+      if (!titulo || !desc) {
+        alert("Por favor completa el título y la descripción.");
+        return;
+      }
+
+      await fetch('/api/admin/add-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo, desc })
+      });
+
+      titleInput.value = '';
+      descInput.value = '';
+
+      const newIndex = (serverState.casos ? serverState.casos.length : 0);
+      await adminSelectCaseIndex(newIndex);
+      syncVercelState();
+    }
+
     async function adminResetLobby() {
       if (confirm("¿Seguro que deseas reiniciar el juego y liberar todos los equipos?")) {
         await fetch('/api/admin/reset', { method: 'POST' });
@@ -599,6 +715,10 @@
     }
 
     function updateUI() {
+      const casosList = serverState.casos && serverState.casos.length > 0 ? serverState.casos : [
+        { titulo: "Caso 1", desc: "Cargando..." }
+      ];
+
       // --- VISTA ADMIN ---
       if (isAdmin) {
         if (serverState.phase === 'lobby') {
@@ -637,8 +757,24 @@
           document.getElementById('admin-phase-lobby').style.display = 'none';
           document.getElementById('admin-phase-game').style.display = 'block';
 
-          const caso = casos[serverState.currentCaseIndex];
-          document.getElementById('admin-case-tag').innerText = `CASO ${serverState.currentCaseIndex + 1} DE 3`;
+          const casesNavBar = document.getElementById('admin-cases-nav-bar');
+          if (casesNavBar) {
+            let pillsHTML = '';
+            casosList.forEach((c, idx) => {
+              const isActive = (idx === serverState.currentCaseIndex);
+              pillsHTML += `
+                <button class="case-pill-btn ${isActive ? 'active-case' : ''}" onclick="adminSelectCaseIndex(${idx})">
+                  Caso ${idx + 1}
+                </button>
+              `;
+            });
+            casesNavBar.innerHTML = pillsHTML;
+          }
+
+          const currentIdx = Math.min(serverState.currentCaseIndex, casosList.length - 1);
+          const caso = casosList[currentIdx];
+
+          document.getElementById('admin-case-tag').innerText = `CASO ${currentIdx + 1} DE ${casosList.length}`;
           document.getElementById('admin-case-title').innerText = caso.titulo;
           document.getElementById('admin-case-desc').innerText = caso.desc;
 
@@ -651,16 +787,13 @@
           document.getElementById('admin-votes-count').innerText = `${countVotes} / 4 Votos de Resistencia Recibidos`;
 
           const btnReveal = document.getElementById('btn-admin-reveal');
-          const btnNext = document.getElementById('btn-admin-next');
           const revealPanel = document.getElementById('admin-reveal-panel');
 
           if (!serverState.revealDone) {
             btnReveal.style.display = 'block';
-            btnNext.style.display = 'none';
             revealPanel.innerHTML = '';
           } else {
             btnReveal.style.display = 'none';
-            btnNext.style.display = 'block';
 
             let revealHTML = `
               <div style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); padding:14px; border-radius:12px; color:#ffccd5; text-align:left;">
@@ -714,8 +847,10 @@
             Defiende la autonomía. Hay 2 equipos infiltrados encubriendo al agresor.`;
           }
 
-          const caso = casos[serverState.currentCaseIndex];
-          document.getElementById('client-case-tag').innerText = `CASO ${serverState.currentCaseIndex + 1} DE 3`;
+          const currentIdx = Math.min(serverState.currentCaseIndex, casosList.length - 1);
+          const caso = casosList[currentIdx];
+
+          document.getElementById('client-case-tag').innerText = `CASO ${currentIdx + 1} DE ${casosList.length}`;
           document.getElementById('client-case-desc').innerText = caso.desc;
 
           const voteWrapper = document.getElementById('client-vote-buttons');
@@ -761,7 +896,7 @@
               if (isCorrect) {
                 feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(6,214,160,0.15); border:1.5px solid var(--accent-green); color:var(--accent-green); margin-top:14px;">🎯 ¡ACERTASTE! El Equipo ${myVote} es un infiltrado del agresor.</div>`;
               } else {
-                feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(239,35,60,0.15); border:1.5px solid var(--accent-red); color:#ff85a1; margin-top:14px;">❌ FALLASTE: El Equipo ${myVote} era un aliado. Los infiltrados eran los Equipos 3 y 6.</div>`;
+                feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(239,35,60,0.15); border:1.5px solid var(--accent-red); color:#ff85a1; margin-top:14px;">❌ FALLASTE: El Equipo ${myVote} era un aliado. Los infiltrados eran los Equipos 3 and 6.</div>`;
               }
             } else {
               feedbackBox.innerHTML = '';
