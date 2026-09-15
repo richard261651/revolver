@@ -1104,47 +1104,56 @@
         } catch (e) {}
       }
 
-      if (statePayload) {
+      if (statePayload && statePayload.teams) {
         const isResetEvent = (statePayload.resetCounter !== undefined && statePayload.resetCounter > lastResetCounter);
+
+        let updatedAny = false;
+        Object.keys(statePayload.teams).forEach(k => {
+          const sTeam = statePayload.teams[k];
+          const lTeam = liveTeamsState[k];
+          if (sTeam) {
+            if (!lTeam || 
+                lTeam.occupied !== sTeam.occupied || 
+                lTeam.status !== sTeam.status || 
+                lTeam.score !== sTeam.score || 
+                lTeam.bullets !== sTeam.bullets ||
+                lTeam.hearts !== sTeam.hearts ||
+                lTeam.currentCase !== sTeam.currentCase ||
+                lTeam.occupiedBy !== sTeam.occupiedBy) {
+              liveTeamsState[k] = sTeam;
+              updatedAny = true;
+            }
+          }
+        });
 
         if (isResetEvent) {
           lastResetCounter = statePayload.resetCounter;
           localStorage.setItem('revolver_last_reset', String(lastResetCounter));
-
           liveTeamsState = defaultTeams();
+          updatedAny = true;
+        }
+
+        if (updatedAny) {
           saveLocalTeamsState();
           renderLiveLeaderboardTable();
+        }
 
-          const gameView = document.getElementById('box-game-view');
-          if (gameView && gameView.style.display !== 'none' && equipoActualId) {
+        // COMPROBACIÓN DE REINICIO PARA PARTICIPANTES:
+        // Si el participante está dentro del juego, pero el juego fue reiniciado o su equipo volvió a estar libre/en espera
+        const gameView = document.getElementById('box-game-view');
+        const isInGameView = gameView && gameView.style.display !== 'none';
+
+        if (isInGameView && equipoActualId) {
+          const myTeamState = liveTeamsState[equipoActualId];
+          const isMyTeamReset = isResetEvent || !myTeamState || !myTeamState.occupied || myTeamState.status === "En Espera";
+
+          if (isMyTeamReset) {
             detenerTimer();
             equipoActualId = null;
             gameView.style.display = 'none';
             document.getElementById('box-team-login').style.display = 'block';
             renderTeamSelectOptions();
             alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
-          }
-        } else if (statePayload.teams) {
-          let updatedAny = false;
-          Object.keys(statePayload.teams).forEach(k => {
-            const sTeam = statePayload.teams[k];
-            const lTeam = liveTeamsState[k];
-            if (sTeam) {
-              if (!lTeam || 
-                  sTeam.occupied !== lTeam.occupied || 
-                  sTeam.status !== lTeam.status || 
-                  sTeam.score !== lTeam.score || 
-                  sTeam.bullets !== lTeam.bullets ||
-                  sTeam.hearts !== lTeam.hearts ||
-                  (sTeam.updatedAt && sTeam.updatedAt > (lTeam.updatedAt || 0))) {
-                liveTeamsState[k] = sTeam;
-                updatedAny = true;
-              }
-            }
-          });
-          if (updatedAny) {
-            saveLocalTeamsState();
-            renderLiveLeaderboardTable();
           }
         }
       }
