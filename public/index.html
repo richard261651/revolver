@@ -674,12 +674,15 @@
       "En 'El Revólver' de Marvel Moreno, Ana María descubrió que la violencia en las relaciones nunca empieza con un disparo, sino con la acumulación silenciosa de pequeños abusos no frenados. Ceder a la intimidación o guardar silencio para cuidar las apariencias sociales es ir cargando el revólver bala por bala. La única forma real de vaciar el tambor es marcar límites firmes, innegociables e irreversibles desde el primer indicio de violencia."
     </div>
 
-    <div id="admin-results-controls" style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
-      <button class="btn-gold" onclick="mostrarPanelDocenteControles()" style="padding:12px;">
+    <div id="admin-results-controls" style="margin-top:18px; display:flex; flex-direction:column; gap:10px;">
+      <button class="btn-main" onclick="adminStartGame()" style="background:var(--green); border-color:#fff; padding:15px; font-size:1.02rem; font-weight:800; box-shadow:0 0 15px rgba(6,214,160,0.4);">
+        🚀 INICIAR NUEVA PARTIDA GLOBAL (NUEVO TOP DE 0)
+      </button>
+      <button class="btn-gold" onclick="mostrarPanelDocenteControles()" style="padding:13px;">
         ⚙️ VOLVER AL PANEL DE CONTROL DOCENTE
       </button>
-      <button class="btn-secondary" onclick="adminResetAll()" style="background:rgba(255,51,102,0.15); border-color:var(--red); color:#ffccd5; padding:12px;">
-        🔄 REINICIAR ACTIVIDAD PARA TODO EL SALÓN
+      <button class="btn-secondary" onclick="adminResetAll()" style="background:rgba(255,51,102,0.15); border-color:var(--red); color:#ffccd5; padding:13px;">
+        🔄 REINICIAR TOTALMENTE Y LIBERAR EQUIPOS
       </button>
     </div>
   </div>
@@ -1181,6 +1184,19 @@
       if (!data) return;
       if (data.type === 'START_GAME') {
         currentGamePhase = 'playing';
+        if (equipoActualId) {
+          rondaActual = 0;
+          puntosEquipo = 0;
+          balasEnTambor = 1;
+          corazonesRestantes = 1;
+          if (liveTeamsState[equipoActualId]) {
+            liveTeamsState[equipoActualId].score = 0;
+            liveTeamsState[equipoActualId].currentCase = 1;
+            liveTeamsState[equipoActualId].bullets = 1;
+            liveTeamsState[equipoActualId].hearts = 1;
+            liveTeamsState[equipoActualId].status = "En Juego";
+          }
+        }
         syncStateWithServer();
       } else if (data.type === 'SHOW_RESULTS') {
         currentGamePhase = 'results';
@@ -1640,6 +1656,23 @@
       audio.playChime();
       currentGamePhase = 'playing';
 
+      // Resetear estadísticas de cada equipo para iniciar la partida 100% desde 0
+      Object.keys(liveTeamsState).forEach(k => {
+        if (liveTeamsState[k]) {
+          liveTeamsState[k].score = 0;
+          liveTeamsState[k].currentCase = 1;
+          liveTeamsState[k].bullets = 1;
+          liveTeamsState[k].hearts = 1;
+          if (liveTeamsState[k].occupied) {
+            liveTeamsState[k].status = "En Juego";
+          } else {
+            liveTeamsState[k].status = "En Espera";
+          }
+        }
+      });
+      saveLocalTeamsState();
+      renderLiveLeaderboardTable();
+
       try {
         await fetch('/api/admin/start', { method: 'POST' });
       } catch (e) {}
@@ -1657,7 +1690,14 @@
       } catch (e) {}
 
       publishRealtimeUpdate({ type: 'START_GAME' });
-      alert("🚀 ¡ACTIVIDAD INICIADA EN VIVO! Todos los equipos en la Sala de Espera han ingresado a los casos.");
+
+      const adminView = document.getElementById('box-admin-view');
+      const resultsView = document.getElementById('box-results-view');
+      if (resultsView) resultsView.style.display = 'none';
+      if (adminView) adminView.style.display = 'block';
+      adminActiveSubView = 'controls';
+
+      alert("🚀 ¡NUEVA PARTIDA INICIADA EN VIVO! Todos los equipos han comenzado en el Caso 1 con 0 puntos.");
     }
 
     async function adminShowResults() {
