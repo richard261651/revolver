@@ -1110,9 +1110,20 @@
         if (isResetEvent) {
           lastResetCounter = statePayload.resetCounter;
           localStorage.setItem('revolver_last_reset', String(lastResetCounter));
+
           liveTeamsState = defaultTeams();
           saveLocalTeamsState();
           renderLiveLeaderboardTable();
+
+          const gameView = document.getElementById('box-game-view');
+          if (gameView && gameView.style.display !== 'none' && equipoActualId) {
+            detenerTimer();
+            equipoActualId = null;
+            gameView.style.display = 'none';
+            document.getElementById('box-team-login').style.display = 'block';
+            renderTeamSelectOptions();
+            alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
+          }
         } else if (statePayload.teams) {
           let updatedAny = false;
           Object.keys(statePayload.teams).forEach(k => {
@@ -1134,25 +1145,6 @@
           if (updatedAny) {
             saveLocalTeamsState();
             renderLiveLeaderboardTable();
-          }
-        }
-
-        // COMPROBACIÓN DE DESCONEXIÓN / REINICIO PARA PARTICIPANTES:
-        // Si el participante está dentro del juego, pero el juego fue reiniciado o su equipo ya no figura en juego
-        const gameView = document.getElementById('box-game-view');
-        const isInGameView = gameView && gameView.style.display !== 'none';
-
-        if (isInGameView && equipoActualId) {
-          const myTeamState = liveTeamsState[equipoActualId];
-          const isMyTeamReset = isResetEvent || !myTeamState || !myTeamState.occupied || myTeamState.status === "En Espera";
-
-          if (isMyTeamReset) {
-            detenerTimer();
-            equipoActualId = null;
-            gameView.style.display = 'none';
-            document.getElementById('box-team-login').style.display = 'block';
-            renderTeamSelectOptions();
-            alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
           }
         }
       }
