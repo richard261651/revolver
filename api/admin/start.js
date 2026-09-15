@@ -1,5 +1,5 @@
-// api/admin/reset.js - Endpoint POST /api/admin/reset
-const { saveRemoteState, initialTeams } = require('../_store.js');
+// api/admin/start.js - Endpoint POST /api/admin/start
+const { fetchRemoteState, saveRemoteState } = require('../_store.js');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -7,11 +7,10 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const newTeams = initialTeams();
+  const currentState = await fetchRemoteState();
   const newState = {
-    phase: 'waiting',
-    resetCounter: Date.now(),
-    teams: newTeams,
+    ...currentState,
+    phase: 'playing',
     updatedAt: Date.now()
   };
   await saveRemoteState(newState);

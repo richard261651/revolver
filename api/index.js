@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const stateHandler = require('./state.js');
 const resetHandler = require('./admin/reset.js');
+const startHandler = require('./admin/start.js');
 const actionHandler = require('./team/action.js');
 
 app.use((req, res, next) => {
@@ -20,6 +21,9 @@ app.get('/state', stateHandler);
 
 app.post('/api/admin/reset', resetHandler);
 app.post('/admin/reset', resetHandler);
+
+app.post('/api/admin/start', startHandler);
+app.post('/admin/start', startHandler);
 
 app.post('/api/team/action', actionHandler);
 app.post('/team/action', actionHandler);

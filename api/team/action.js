@@ -15,9 +15,19 @@ module.exports = async (req, res) => {
 
   const currentState = await fetchRemoteState();
 
+  if (body.type === 'START_GAME') {
+    const newState = {
+      ...currentState,
+      phase: 'playing',
+      updatedAt: Date.now()
+    };
+    await saveRemoteState(newState);
+    return res.status(200).json({ success: true, gameState: newState });
+  }
+
   if (body.type === 'RESET_ALL') {
     const newState = {
-      phase: 'playing',
+      phase: 'waiting',
       resetCounter: Date.now(),
       teams: initialTeams(),
       updatedAt: Date.now()

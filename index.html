@@ -514,6 +514,10 @@
       PANEL DE CONTROL Y PROYECTOR DE CLASE
     </div>
 
+    <button class="btn-main" id="btn-admin-start" onclick="adminStartGame()" style="background:var(--green); border-color:#fff; margin-bottom: 12px; padding: 16px; font-size:1.02rem; font-weight:800; box-shadow:0 0 15px rgba(6,214,160,0.4);">
+      🚀 INICIAR ACTIVIDAD EN VIVO (DESBLOQUEAR CASOS)
+    </button>
+
     <button class="btn-gold" onclick="abrirModalQRGrande()" style="margin-bottom: 14px; padding: 14px;">
       🔍 VER CÓDIGO QR EN GRANDE PARA EL SALÓN
     </button>
@@ -539,7 +543,7 @@
     <div style="font-size:0.8rem; font-weight:bold; color:var(--purple); letter-spacing:1px; margin-bottom:6px;">
       MESA DE RIESGO DE GRUPOS
     </div>
-    <p style="font-size: 0.88rem; color: #aaa;">Selecciona tu equipo para iniciar las 6 rondas:</p>
+    <p style="font-size: 0.88rem; color: #aaa;">Selecciona tu equipo para registrar tu participación:</p>
 
     <select id="sel-grupo">
       <option value="1">Equipo 1</option>
@@ -550,8 +554,28 @@
       <option value="6">Equipo 6</option>
     </select>
 
-    <button class="btn-main" onclick="confirmarEquipo()">Iniciar Ruleta Rusa (1 Vida)</button>
+    <button class="btn-main" onclick="confirmarEquipo()">Confirmar Registro de Equipo</button>
     <button class="btn-secondary" onclick="volverASeleccionRole()">← Volver</button>
+  </div>
+
+  <!-- VISTA DE PARTICIPANTE - SALA DE ESPERA DEL SALÓN (LOBBY) -->
+  <div class="panel" id="box-lobby-view" style="display:none;">
+    <div style="font-size:0.8rem; font-weight:bold; color:var(--gold); letter-spacing:1px; margin-bottom:6px;" id="lbl-lobby-grupo">
+      EQUIPO REGISTRADO
+    </div>
+    <div class="badge-status badge-clic" style="font-size:0.88rem; padding:6px 14px; margin: 10px 0; border: 1.5px solid var(--gold);">
+      ⏳ SALA DE ESPERA DEL SALÓN
+    </div>
+    <p style="font-size: 0.9rem; color: #eee; margin: 12px 0; line-height: 1.45;">
+      ¡Tu equipo ha sido registrado con éxito en la Mesa de Riesgo!
+      <br><br>
+      <strong style="color:var(--gold);">La actividad iniciará simultáneamente para todos los grupos en el momento en que el docente la active desde el proyector.</strong>
+    </p>
+    <div class="closing-reflection" style="margin-top:14px;">
+      <strong style="color:var(--gold); display:block; margin-bottom:4px;">REFLEXIÓN PREVIA (MARVEL MORENO):</strong>
+      "En el cuento 'El Revólver', las agresiones no comienzan con un disparo, sino con pequeños cederes cotidianos. Preparen a su equipo para identificar dónde poner los límites antes de que el tambor se llene de balas."
+    </div>
+    <button class="btn-secondary" onclick="volverASeleccionRole()" style="margin-top:14px;">← Cambiar de Equipo</button>
   </div>
 
   <!-- VISTA DE PARTICIPANTE - INTERFAZ DE JUEGO -->
@@ -905,6 +929,7 @@
     let corazonesRestantes = 1;
     let puntosEquipo = 0;
     let angulo = 0;
+    let currentGamePhase = 'waiting';
 
     function getDeviceId() {
       let devId = localStorage.getItem('revolver_device_id');
@@ -976,7 +1001,7 @@
     const SYNC_CLOUD_ID = 'ff808181a09d98f701a0a6b51bb0141c';
     const SYNC_CLOUD_URL = `https://api.restful-api.dev/objects/${SYNC_CLOUD_ID}`;
 
-    function compactEncodeClient(fullTeamsState, resetCount) {
+    function compactEncodeClient(fullTeamsState, resetCount, currentPhase) {
       const compactTeams = {};
       Object.keys(fullTeamsState).forEach(id => {
         const t = fullTeamsState[id];
@@ -991,6 +1016,7 @@
         ];
       });
       return {
+        p: currentPhase || currentGamePhase || 'waiting',
         r: resetCount || lastResetCounter,
         u: Date.now(),
         t: compactTeams
@@ -1016,6 +1042,7 @@
         };
       });
       return {
+        phase: compactState.p || 'waiting',
         resetCounter: compactState.r || 0,
         teams: teams,
         updatedAt: compactState.u || Date.now()
@@ -1030,6 +1057,7 @@
         payload.teamState.updatedAt = Date.now();
       }
       payload.timestamp = Date.now();
+      payload.phase = currentGamePhase;
 
       const bodyStr = JSON.stringify(payload);
 
@@ -1042,7 +1070,7 @@
       } catch (e) {}
 
       try {
-        const compact = compactEncodeClient(liveTeamsState, lastResetCounter);
+        const compact = compactEncodeClient(liveTeamsState, lastResetCounter, currentGamePhase);
         fetch(SYNC_CLOUD_URL, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -1057,7 +1085,14 @@
 
     function procesarEventoRealtime(data) {
       if (!data) return;
-      if (data.type === 'TEAM_UPDATE' && data.teamId && data.teamState) {
+      if (data.type === 'START_GAME') {
+        currentGamePhase = 'playing';
+      } else if (data.type === 'RESET_ALL') {
+        currentGamePhase = 'waiting';
+        liveTeamsState = defaultTeams();
+        saveLocalTeamsState();
+        renderLiveLeaderboardTable();
+      } else if (data.type === 'TEAM_UPDATE' && data.teamId && data.teamState) {
         const incoming = data.teamState;
         const current = liveTeamsState[data.teamId];
 
@@ -1070,10 +1105,6 @@
           saveLocalTeamsState();
           renderLiveLeaderboardTable();
         }
-      } else if (data.type === 'RESET_ALL') {
-        liveTeamsState = defaultTeams();
-        saveLocalTeamsState();
-        renderLiveLeaderboardTable();
       }
     }
 
@@ -1105,6 +1136,10 @@
       }
 
       if (statePayload && statePayload.teams) {
+        if (statePayload.phase) {
+          currentGamePhase = statePayload.phase;
+        }
+
         // Sync lastResetCounter on initial load without triggering a false alert
         if (!lastResetCounter && statePayload.resetCounter) {
           lastResetCounter = statePayload.resetCounter;
@@ -1140,6 +1175,7 @@
           lastResetCounter = statePayload.resetCounter;
           localStorage.setItem('revolver_last_reset', String(lastResetCounter));
           liveTeamsState = defaultTeams();
+          currentGamePhase = 'waiting';
           updatedAny = true;
         }
 
@@ -1148,15 +1184,30 @@
           renderLiveLeaderboardTable();
         }
 
-        // COMPROBACIÓN DE REINICIO ÚNICO PARA PARTICIPANTES:
-        // Solo expulsar a los participantes cuando ocurra UN EVENTO DE REINICIO REAL por parte del docente
+        const lobbyView = document.getElementById('box-lobby-view');
         const gameView = document.getElementById('box-game-view');
+        const isInLobbyView = lobbyView && lobbyView.style.display !== 'none';
         const isInGameView = gameView && gameView.style.display !== 'none';
 
-        if (isInGameView && equipoActualId && isResetEvent) {
+        // AUTO-TRANSICIÓN SIMULTÁNEA: Si el participante está en la Sala de Espera y el docente inicia la actividad
+        if (isInLobbyView && equipoActualId && currentGamePhase === 'playing') {
+          audio.playChime();
+          lobbyView.style.display = 'none';
+          gameView.style.display = 'block';
+          document.getElementById('lbl-grupo').innerText = nombreEquipo;
+          actualizarCorazonesUI();
+          actualizarTambor();
+          mostrarRonda();
+        }
+
+        // COMPROBACIÓN DE REINICIO ÚNICO PARA PARTICIPANTES:
+        // Solo expulsar a los participantes cuando ocurra UN EVENTO DE REINICIO REAL por parte del docente
+        if ((isInGameView || isInLobbyView) && equipoActualId && isResetEvent) {
           detenerTimer();
           equipoActualId = null;
-          gameView.style.display = 'none';
+          currentGamePhase = 'waiting';
+          if (gameView) gameView.style.display = 'none';
+          if (lobbyView) lobbyView.style.display = 'none';
           document.getElementById('box-team-login').style.display = 'block';
           renderTeamSelectOptions();
           alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
@@ -1229,11 +1280,36 @@
       renderTeamSelectOptions();
     }
 
+    async function adminStartGame() {
+      audio.playChime();
+      currentGamePhase = 'playing';
+
+      try {
+        await fetch('/api/admin/start', { method: 'POST' });
+      } catch (e) {}
+
+      try {
+        const compact = compactEncodeClient(liveTeamsState, lastResetCounter, 'playing');
+        await fetch(SYNC_CLOUD_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'revolver_v3',
+            data: { raw: JSON.stringify(compact) }
+          })
+        });
+      } catch (e) {}
+
+      publishRealtimeUpdate({ type: 'START_GAME' });
+      alert("🚀 ¡ACTIVIDAD INICIADA EN VIVO! Todos los equipos en la Sala de Espera han ingresado a los casos.");
+    }
+
     async function adminResetAll() {
       if (confirm("¿Reiniciar la tabla de posiciones y restablecer los 6 equipos a 1 vida inicial?")) {
         lastResetCounter = Date.now();
         localStorage.setItem('revolver_last_reset', String(lastResetCounter));
 
+        currentGamePhase = 'waiting';
         liveTeamsState = defaultTeams();
         saveLocalTeamsState();
         renderLiveLeaderboardTable();
@@ -1243,7 +1319,7 @@
         } catch (e) {}
 
         try {
-          const compact = compactEncodeClient(defaultTeams(), lastResetCounter);
+          const compact = compactEncodeClient(defaultTeams(), lastResetCounter, 'waiting');
           await fetch(SYNC_CLOUD_URL, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1288,6 +1364,7 @@
       audio.playClick();
       document.getElementById('box-role-select').style.display = 'none';
       document.getElementById('box-team-login').style.display = 'none';
+      document.getElementById('box-lobby-view').style.display = 'none';
       document.getElementById('box-game-view').style.display = 'none';
       document.getElementById('box-admin-view').style.display = 'block';
 
@@ -1310,6 +1387,7 @@
       audio.playClick();
       document.getElementById('box-admin-view').style.display = 'none';
       document.getElementById('box-team-login').style.display = 'none';
+      document.getElementById('box-lobby-view').style.display = 'none';
       document.getElementById('box-game-view').style.display = 'none';
       document.getElementById('box-role-select').style.display = 'block';
     }
@@ -1396,7 +1474,7 @@
         bullets: balasEnTambor,
         score: puntosEquipo,
         currentCase: 1,
-        status: "En Juego",
+        status: "En Espera",
         occupied: true,
         occupiedBy: myDeviceId,
         updatedAt: Date.now()
@@ -1413,12 +1491,20 @@
       });
 
       document.getElementById('box-team-login').style.display = 'none';
-      document.getElementById('box-game-view').style.display = 'block';
-      document.getElementById('lbl-grupo').innerText = nombreEquipo;
 
-      actualizarCorazonesUI();
-      actualizarTambor();
-      mostrarRonda();
+      if (currentGamePhase === 'playing') {
+        document.getElementById('box-lobby-view').style.display = 'none';
+        document.getElementById('box-game-view').style.display = 'block';
+        document.getElementById('lbl-grupo').innerText = nombreEquipo;
+        actualizarCorazonesUI();
+        actualizarTambor();
+        mostrarRonda();
+      } else {
+        document.getElementById('box-game-view').style.display = 'none';
+        document.getElementById('box-lobby-view').style.display = 'block';
+        const lobbyLbl = document.getElementById('lbl-lobby-grupo');
+        if (lobbyLbl) lobbyLbl.innerText = `${nombreEquipo} - REGISTRADO`;
+      }
     }
 
     function actualizarCorazonesUI() {

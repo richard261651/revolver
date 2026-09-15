@@ -7,6 +7,7 @@
   "routes": [
     { "src": "/api/state", "dest": "/api/state.js" },
     { "src": "/api/admin/reset", "dest": "/api/admin/reset.js" },
+    { "src": "/api/admin/start", "dest": "/api/admin/start.js" },
     { "src": "/api/team/action", "dest": "/api/team/action.js" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ]

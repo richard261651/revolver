@@ -27,7 +27,8 @@ function compactEncode(fullState) {
     ];
   });
   return {
-    r: fullState.resetCounter || 0,
+    p: fullState.phase || 'waiting',
+    r: fullState.resetCounter !== undefined ? fullState.resetCounter : 0,
     u: fullState.updatedAt || Date.now(),
     t: compactTeams
   };
@@ -52,7 +53,7 @@ function compactDecode(compactState) {
     };
   });
   return {
-    phase: 'playing',
+    phase: compactState.p || 'waiting',
     resetCounter: compactState.r || 0,
     teams: teams,
     updatedAt: compactState.u || Date.now()
@@ -60,7 +61,7 @@ function compactDecode(compactState) {
 }
 
 let inMemoryState = {
-  phase: 'playing',
+  phase: 'waiting',
   resetCounter: 0,
   teams: initialTeams(),
   updatedAt: 0
