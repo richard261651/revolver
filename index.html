@@ -518,6 +518,10 @@
       🚀 INICIAR ACTIVIDAD EN VIVO (DESBLOQUEAR CASOS)
     </button>
 
+    <button class="btn-gold" id="btn-admin-show-podium" onclick="mostrarResultadosEnProyector()" style="display:none; background:linear-gradient(135deg, #ffb703 0%, #fb8500 100%); color:#111; margin-bottom: 12px; padding: 14px; font-weight:900;">
+      🏆 VER PODIO Y RESULTADOS FINALES EN EL PROYECTOR
+    </button>
+
     <button class="btn-gold" onclick="adminShowResults()" style="background:linear-gradient(135deg, #ffb703 0%, #fb8500 100%); color:#111; margin-bottom: 12px; padding: 14px; font-weight:900;">
       🏁 FINALIZAR Y MOSTRAR RESULTADOS FINALES A TODOS
     </button>
@@ -671,7 +675,7 @@
     </div>
 
     <div id="admin-results-controls" style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
-      <button class="btn-gold" onclick="entrarComoAdmin()" style="padding:12px;">
+      <button class="btn-gold" onclick="mostrarPanelDocenteControles()" style="padding:12px;">
         ⚙️ VOLVER AL PANEL DE CONTROL DOCENTE
       </button>
       <button class="btn-secondary" onclick="adminResetAll()" style="background:rgba(255,51,102,0.15); border-color:var(--red); color:#ffccd5; padding:12px;">
@@ -974,6 +978,7 @@
     let puntosEquipo = 0;
     let angulo = 0;
     let currentGamePhase = 'waiting';
+    let adminActiveSubView = 'controls'; // 'controls' o 'results'
 
     function getDeviceId() {
       let devId = localStorage.getItem('revolver_device_id');
@@ -1002,6 +1007,10 @@
 
     function updateAdminTeamsStatus() {
       const container = document.getElementById('admin-teams-status');
+      const btnShowPodium = document.getElementById('btn-admin-show-podium');
+      if (btnShowPodium) {
+        btnShowPodium.style.display = (currentGamePhase === 'results') ? 'block' : 'none';
+      }
       if (!container) return;
       let html = '';
       for (let i = 1; i <= 6; i++) {
@@ -1332,13 +1341,21 @@
             if (teamLogin) teamLogin.style.display = 'none';
             if (lobbyView) lobbyView.style.display = 'none';
             if (gameView) gameView.style.display = 'none';
-            if (adminView) adminView.style.display = 'none';
-            if (resultsView) {
-              if (resultsView.style.display === 'none') audio.playChime();
-              resultsView.style.display = 'block';
-              renderFinalResultsView();
+
+            if (adminActiveSubView === 'controls') {
+              if (resultsView) resultsView.style.display = 'none';
+              if (adminView) adminView.style.display = 'block';
+              updateAdminTeamsStatus();
+            } else {
+              if (adminView) adminView.style.display = 'none';
+              if (resultsView) {
+                if (resultsView.style.display === 'none') audio.playChime();
+                resultsView.style.display = 'block';
+                renderFinalResultsView();
+              }
             }
           } else {
+            adminActiveSubView = 'controls';
             if (resultsView && resultsView.style.display !== 'none') {
               resultsView.style.display = 'none';
               if (adminView) adminView.style.display = 'block';
@@ -1429,6 +1446,28 @@
 
     setInterval(syncStateWithServer, 800);
     initRealtimeListener();
+
+    function mostrarPanelDocenteControles() {
+      audio.playClick();
+      adminActiveSubView = 'controls';
+      const resultsView = document.getElementById('box-results-view');
+      const adminView = document.getElementById('box-admin-view');
+      if (resultsView) resultsView.style.display = 'none';
+      if (adminView) adminView.style.display = 'block';
+      updateAdminTeamsStatus();
+    }
+
+    function mostrarResultadosEnProyector() {
+      audio.playClick();
+      adminActiveSubView = 'results';
+      const adminView = document.getElementById('box-admin-view');
+      const resultsView = document.getElementById('box-results-view');
+      if (adminView) adminView.style.display = 'none';
+      if (resultsView) {
+        resultsView.style.display = 'block';
+        renderFinalResultsView();
+      }
+    }
 
     function renderFinalResultsView() {
       const podiumContainer = document.getElementById('podium-container');
@@ -1625,6 +1664,7 @@
       if (confirm("¿Finalizar la actividad y mostrar los Resultados Finales y el Podio en la pantalla del proyector?")) {
         audio.playChime();
         currentGamePhase = 'results';
+        adminActiveSubView = 'results';
 
         try {
           await fetch('/api/admin/results', { method: 'POST' });
@@ -1643,15 +1683,7 @@
         } catch (e) {}
 
         publishRealtimeUpdate({ type: 'SHOW_RESULTS' });
-
-        const adminView = document.getElementById('box-admin-view');
-        const resultsView = document.getElementById('box-results-view');
-        if (adminView) adminView.style.display = 'none';
-        if (resultsView) {
-          resultsView.style.display = 'block';
-          renderFinalResultsView();
-        }
-
+        mostrarResultadosEnProyector();
         alert("🏁 ¡ACTIVIDAD FINALIZADA! Se han mostrado los Resultados Finales y el Podio en la pantalla del proyector.");
       }
     }
@@ -1661,19 +1693,20 @@
         detenerTimer();
         equipoActualId = null;
         nombreEquipo = "";
+        rondaActual = 0;
+        balasEnTambor = 1;
+        corazonesRestantes = 1;
+        puntosEquipo = 0;
         lastResetCounter = Date.now();
         localStorage.setItem('revolver_last_reset', String(lastResetCounter));
 
         currentGamePhase = 'waiting';
+        adminActiveSubView = 'controls';
         liveTeamsState = defaultTeams();
         saveLocalTeamsState();
         renderLiveLeaderboardTable();
 
-        const resultsView = document.getElementById('box-results-view');
-        const adminView = document.getElementById('box-admin-view');
-        if (resultsView) resultsView.style.display = 'none';
-        if (adminView) adminView.style.display = 'block';
-        updateAdminTeamsStatus();
+        mostrarPanelDocenteControles();
 
         try {
           await fetch('/api/admin/reset', { method: 'POST' });
@@ -1724,24 +1757,20 @@
       }
 
       audio.playClick();
+      adminActiveSubView = 'controls';
+
       document.getElementById('box-role-select').style.display = 'none';
       document.getElementById('box-team-login').style.display = 'none';
       document.getElementById('box-lobby-view').style.display = 'none';
       document.getElementById('box-game-view').style.display = 'none';
-
-      if (currentGamePhase === 'results') {
-        document.getElementById('box-admin-view').style.display = 'none';
-        document.getElementById('box-results-view').style.display = 'block';
-        renderFinalResultsView();
-      } else {
-        document.getElementById('box-results-view').style.display = 'none';
-        document.getElementById('box-admin-view').style.display = 'block';
-      }
+      document.getElementById('box-results-view').style.display = 'none';
+      document.getElementById('box-admin-view').style.display = 'block';
 
       const joinUrl = `${window.location.origin}${window.location.pathname}?mode=participant`;
       document.getElementById('admin-qr-container').innerHTML = generateQRInlineSVG(joinUrl, 160);
       document.getElementById('admin-url-text').innerText = joinUrl;
 
+      updateAdminTeamsStatus();
       syncStateWithServer();
     }
 
