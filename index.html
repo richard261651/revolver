@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Revólver: Modo Kahoot (3 Casos)</title>
+  <title>El Revólver: Modo Kahoot Express</title>
   
   <meta name="theme-color" content="#0d0e12">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -126,6 +126,17 @@
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 1px;
+    }
+
+    .btn-express {
+      background: linear-gradient(135deg, #06d6a0 0%, #1b9aaa 100%);
+      color: #000;
+      border: none;
+      font-weight: 900;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 15px rgba(6, 214, 160, 0.4);
     }
 
     .btn-secondary {
@@ -305,12 +316,21 @@
       color: #000;
       border-color: var(--accent-gold);
     }
+
+    .timer-badge {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--accent-gold);
+      font-family: monospace;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>El Revólver<span>Plataforma Online Vercel</span></h1>
+    <h1>El Revólver<span>Modo Kahoot Express</span></h1>
   </header>
 
   <!-- SELECCIÓN INICIAL -->
@@ -321,7 +341,7 @@
 
     <button class="btn-gold" onclick="entrarComoAdmin()" style="padding: 16px;">
       🖥️ PANEL DE ADMIN / PRESENTADOR<br>
-      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR escaneable, controlar lobby y revelar votos</span>
+      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR, controlar velocidad y revelar resultados</span>
     </button>
 
     <button class="btn-main" onclick="entrarComoEquipo()" style="margin-top: 14px; padding: 16px;">
@@ -340,7 +360,7 @@
     <div id="admin-phase-lobby">
       <div class="qr-hero-card">
         <div id="admin-qr-container" style="margin-bottom:10px;"></div>
-        <div style="font-size: 0.9rem; font-weight: 800; color: var(--text-bright);">📱 ESCANEA CON LA CÁMARA DE TU CELULAR</div>
+        <div style="font-size: 0.9rem; font-weight: 800; color: var(--text-bright);">📱 ESCANEA PARA UNIRTE CON TU EQUIPO</div>
         <div style="font-size: 0.88rem; font-weight: 800; color: var(--accent-gold); margin-top:4px; word-break: break-all;" id="admin-url-text">
           https://...
         </div>
@@ -354,7 +374,7 @@
       <div class="teams-grid" id="admin-lobby-grid"></div>
 
       <button class="btn-gold" id="btn-admin-start" onclick="adminStartGame()" style="margin-top: 18px; padding: 16px;" disabled>
-        🚀 INICIAR ACTIVIDAD (0/6 EQUIPOS)
+        🚀 INICIAR ACTIVIDAD EXPRESS (0/6 EQUIPOS)
       </button>
 
       <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Sala / Limpiar Equipos</button>
@@ -362,7 +382,6 @@
 
     <!-- ADMIN GAME PANEL -->
     <div id="admin-phase-game" style="display:none;">
-      <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">SELECCIONAR CASO EN PANTALLA CENTRAL:</div>
       <div class="cases-bar-wrapper">
         <button id="btn-case-tab-0" class="case-pill-btn active-case" onclick="adminSelectCaseIndex(0)">Caso 1</button>
         <button id="btn-case-tab-1" class="case-pill-btn" onclick="adminSelectCaseIndex(1)">Caso 2</button>
@@ -375,27 +394,18 @@
         <p id="admin-case-desc" style="font-size:0.95rem; line-height:1.5; color:#fff;"></p>
       </div>
 
-      <div style="margin-top: 14px; background: rgba(255,255,255,0.03); padding: 14px; border-radius: 12px;">
-        <div style="font-size:0.85rem; color:var(--text-muted);">VOTOS RECIBIDOS EN TIEMPO REAL:</div>
-        <div style="font-size:1.35rem; font-weight:800; color:var(--accent-green); margin-top:4px;" id="admin-votes-count">
-          0 / 4 Votos de Resistencia
+      <div style="margin-top: 12px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px;">
+        <div class="timer-badge" id="admin-timer-val">⏱️ 45s</div>
+        <div style="font-size:0.85rem; color:var(--text-muted);" id="admin-votes-count">
+          0 / 4 Votos de Resistencia Recibidos
         </div>
       </div>
 
-      <button class="btn-gold" id="btn-admin-reveal" onclick="adminRevealVotes()" style="margin-top: 14px; display:none;">
-        🔍 REVELAR RESULTADOS A TODA LA CLASE
+      <button class="btn-express" id="btn-admin-express" onclick="adminQuickAdvance()" style="margin-top: 14px; padding: 16px;">
+        ⚡ REVELAR RESULTADOS Y PASAR AL SIGUIENTE
       </button>
 
       <div id="admin-reveal-panel" style="margin-top: 14px;"></div>
-
-      <div style="display: flex; gap: 8px; margin-top: 14px;">
-        <button class="btn-main" id="btn-admin-prev" onclick="adminPrevCase()" style="flex: 1;">
-          ◀ CASO ANTERIOR
-        </button>
-        <button class="btn-main" id="btn-admin-next" onclick="adminNextCase()" style="flex: 1;">
-          CASO SIGUIENTE ▶
-        </button>
-      </div>
 
       <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Juego</button>
     </div>
@@ -438,7 +448,7 @@
       <h3 style="font-size: 1.1rem; margin-bottom: 6px;">¡Registrado con Éxito!</h3>
       <div id="client-team-label" style="font-weight: bold; color: #fff; margin-bottom: 8px;"></div>
       <p style="font-size: 0.85rem; color: var(--text-muted);">
-        🔒 Dispositivo vinculado a este equipo.<br>Esperando a que el Admin inicie la actividad desde la pantalla central...
+        🔒 Dispositivo vinculado.<br>Esperando a que el Presentador inicie la actividad...
       </p>
     </div>
   </div>
@@ -455,14 +465,14 @@
     </div>
 
     <div style="margin-top: 14px; text-align: left;" id="client-voting-wrapper">
-      <h3 style="font-size: 0.9rem; color: #fff; font-weight: 700;" id="client-vote-title">Votación y Acusación:</h3>
+      <h3 style="font-size: 0.9rem; color: #fff; font-weight: 700;" id="client-vote-title">Votación Exprés:</h3>
       <div id="client-vote-buttons"></div>
     </div>
 
     <div id="client-vote-feedback"></div>
   </div>
 
-  <script src="js/components/qr.js"></script>
+  <script src="public/js/components/qr.js"></script>
 
   <script>
     const INFILTRADOS = ["3", "6"];
@@ -476,6 +486,8 @@
     let myTeamId = localStorage.getItem('revolver_team_id') || null;
     let myVocero = localStorage.getItem('revolver_vocero') || '';
     let isAdmin = false;
+    let timerInterval = null;
+    let timerSeconds = 45;
 
     let serverState = {
       phase: 'lobby',
@@ -488,16 +500,16 @@
 
     const casosFijos = [
       {
-        titulo: "Caso 1: La Fachada en Redes",
-        desc: "Una pareja finge amor idílico en redes sociales, pero descubres que hay agresión e infidelidad oculta. Al pedir explicaciones, te exigen guardar silencio por 'el qué dirán'. ¿Confrontar la farsa o mantener las apariencias del círculo?"
+        titulo: "Caso 1: Apariencias y Redes",
+        desc: "Una pareja finge amor idílico en redes pero oculta maltrato e infidelidad. El entorno pide no hacer escándalo. ¿Confrontar de frente o guardar silencio?"
       },
       {
         titulo: "Caso 2: Lujos y Falsa Reparación",
-        desc: "Tras un hecho de violencia física, el agresor intenta 'resarcir' el daño regalando artículos de lujo, joyas y pidiendo disculpas. ¿Aceptar la transferencia patrimonial equivale a perdonar el maltrato?"
+        desc: "Tras una agresión física, el agresor regaló joyas caras y teléfonos para 'comprar' el perdón. ¿Aceptar lujos equivale a saldar el maltrato?"
       },
       {
         titulo: "Caso 3: La Amenaza Velada (El Revólver)",
-        desc: "Consigues una prueba/arma objetiva con la que puedes neutralizar al agresor. ¿Es mejor ejecutar una venganza/disparo inmediato, o mantener la amenaza en silencio para garantizar disuasión constante sin derramar sangre?"
+        desc: "Consigues un arma/prueba decisiva. ¿Es mejor la venganza pública inmediata o la amenaza en silencio para lograr disuasión constante?"
       }
     ];
 
@@ -520,6 +532,23 @@
     }
 
     setInterval(syncVercelState, 1000);
+
+    function startCaseTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerSeconds = 45;
+      const el = document.getElementById('admin-timer-val');
+      if (el) el.textContent = `⏱️ ${timerSeconds}s`;
+
+      timerInterval = setInterval(() => {
+        if (timerSeconds > 0) {
+          timerSeconds--;
+          if (el) el.textContent = `⏱️ ${timerSeconds}s`;
+        } else {
+          clearInterval(timerInterval);
+          if (el) el.textContent = `⏱️ ¡TIEMPO CUMPLIDO!`;
+        }
+      }, 1000);
+    }
 
     function copiarEnlaceVercel() {
       const studentUrl = window.location.origin + '?role=student';
@@ -613,31 +642,29 @@
 
     async function adminStartGame() {
       await fetch('/api/admin/start', { method: 'POST' });
+      startCaseTimer();
       syncVercelState();
     }
 
-    async function adminRevealVotes() {
-      await fetch('/api/admin/reveal', { method: 'POST' });
-      syncVercelState();
-    }
-
-    async function adminNextCase() {
-      await fetch('/api/admin/next', { method: 'POST' });
-      syncVercelState();
-    }
-
-    async function adminPrevCase() {
-      await fetch('/api/admin/prev', { method: 'POST' });
+    async function adminQuickAdvance() {
+      await fetch('/api/admin/quick-advance', { method: 'POST' });
+      if (!serverState.revealDone) {
+        // Just revealed
+      } else {
+        startCaseTimer();
+      }
       syncVercelState();
     }
 
     async function adminSelectCaseIndex(idx) {
       const diff = idx - serverState.currentCaseIndex;
       if (diff > 0) {
-        for (let i = 0; i < diff; i++) await adminNextCase();
+        for (let i = 0; i < diff; i++) await fetch('/api/admin/next', { method: 'POST' });
       } else if (diff < 0) {
-        for (let i = 0; i < Math.abs(diff); i++) await adminPrevCase();
+        for (let i = 0; i < Math.abs(diff); i++) await fetch('/api/admin/prev', { method: 'POST' });
       }
+      startCaseTimer();
+      syncVercelState();
     }
 
     async function adminResetLobby() {
@@ -685,7 +712,7 @@
           grid.innerHTML = gridHTML;
 
           const btnStart = document.getElementById('btn-admin-start');
-          btnStart.textContent = `🚀 INICIAR ACTIVIDAD (${joinedCount}/6 EQUIPOS)`;
+          btnStart.textContent = `🚀 INICIAR ACTIVIDAD EXPRESS (${joinedCount}/6 EQUIPOS)`;
           btnStart.disabled = joinedCount === 0;
 
         } else {
@@ -714,20 +741,24 @@
 
           document.getElementById('admin-votes-count').innerText = `${countVotes} / 4 Votos de Resistencia Recibidos`;
 
-          const btnReveal = document.getElementById('btn-admin-reveal');
+          const btnExpress = document.getElementById('btn-admin-express');
           const revealPanel = document.getElementById('admin-reveal-panel');
 
           if (!serverState.revealDone) {
-            btnReveal.style.display = 'block';
+            btnExpress.textContent = `⚡ REVELAR RESULTADOS DEL CASO ${currentIdx + 1}`;
             revealPanel.innerHTML = '';
           } else {
-            btnReveal.style.display = 'none';
+            if (currentIdx < 2) {
+              btnExpress.textContent = `⚡ PASAR AL CASO ${currentIdx + 2} ▶`;
+            } else {
+              btnExpress.textContent = `🏆 ACTIVIDAD CONCLUIDA (REINICIAR)`;
+            }
 
             let revealHTML = `
               <div style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); padding:14px; border-radius:12px; color:#ffccd5; text-align:left;">
-                <strong style="color:var(--accent-gold); font-size:1.05rem;">🎯 REVELACIÓN EN PANTALLA DE AULA:</strong><br><br>
+                <strong style="color:var(--accent-gold); font-size:1.05rem;">🎯 REVELACIÓN RÁPIDA DE VOTOS:</strong><br><br>
                 🚨 <strong>INFILTRADOS DEL AULA:</strong> Equipos 3 y 6.<br><br>
-                📊 <strong>VOTOS EMITIDOS:</strong><br>
+                📊 <strong>VOTOS DE RESISTENCIA:</strong><br>
             `;
 
             resistenciaTeams.forEach(tid => {
@@ -736,7 +767,7 @@
                 const isAccurate = INFILTRADOS.includes(vTarget);
                 revealHTML += `<div>• Equipo ${tid} acusó al <strong>Equipo ${vTarget}</strong> ${isAccurate ? '🎯 (¡ACERTO!)' : '❌ (Fallo)'}</div>`;
               } else {
-                revealHTML += `<div>• Equipo ${tid}: <em>Sin voto emitido</em></div>`;
+                revealHTML += `<div>• Equipo ${tid}: <em>Sin voto</em></div>`;
               }
             });
 

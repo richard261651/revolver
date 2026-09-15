@@ -1,4 +1,4 @@
-// api/index.js - Vercel Serverless Function Handler (3 Casos Fijos)
+// api/index.js - Vercel Serverless Function Handler (Modo Rápido)
 const express = require('express');
 const cors = require('cors');
 
@@ -8,19 +8,19 @@ app.use(express.json());
 
 const INFILTRADOS = ["3", "6"];
 
-// 3 Casos Fijos
+// 3 Casos Fijos Sintéticos y Rápida Lectura
 const CASOS_FIJOS = [
   {
-    titulo: "Caso 1: La Fachada en Redes",
-    desc: "Una pareja finge amor idílico en redes sociales, pero descubres que hay agresión e infidelidad oculta. Al pedir explicaciones, te exigen guardar silencio por 'el qué dirán'. ¿Confrontar la farsa o mantener las apariencias del círculo?"
+    titulo: "Caso 1: Apariencias y Redes",
+    desc: "Una pareja finge amor idílico en redes pero oculta maltrato e infidelidad. El entorno pide no hacer escándalo. ¿Confrontar de frente o guardar silencio?"
   },
   {
     titulo: "Caso 2: Lujos y Falsa Reparación",
-    desc: "Tras un hecho de violencia física, el agresor intenta 'resarcir' el daño regalando artículos de lujo, joyas y pidiendo disculpas. ¿Aceptar la transferencia patrimonial equivale a perdonar el maltrato?"
+    desc: "Tras una agresión física, el agresor regaló joyas cara y teléfonos para 'comprar' el perdón. ¿Aceptar lujos equivale a saldar el maltrato?"
   },
   {
     titulo: "Caso 3: La Amenaza Velada (El Revólver)",
-    desc: "Consigues una prueba/arma objetiva con la que puedes neutralizar al agresor. ¿Es mejor ejecutar una venganza/disparo inmediato, o mantener la amenaza en silencio para garantizar disuasión constante sin derramar sangre?"
+    desc: "Consigues un arma/prueba decisiva. ¿Es mejor la venganza pública inmediata o la amenaza en silencio para lograr disuasión constante?"
   }
 ];
 
@@ -50,12 +50,12 @@ app.post('/api/join', (req, res) => {
   const { teamId, vocero, deviceId } = req.body;
 
   if (!teamId || !vocero || !deviceId) {
-    return res.status(400).json({ error: 'Faltan datos requeridos (teamId, vocero, deviceId).' });
+    return res.status(400).json({ error: 'Faltan datos requeridos.' });
   }
 
   const existing = gameState.joinedTeams[teamId];
   if (existing && existing.deviceId !== deviceId) {
-    return res.status(409).json({ error: `El Equipo ${teamId} ya fue tomado por otro dispositivo en la sala.` });
+    return res.status(409).json({ error: `El Equipo ${teamId} ya está en la sala.` });
   }
 
   gameState.joinedTeams[teamId] = { vocero, deviceId };
@@ -68,7 +68,7 @@ app.post('/api/vote', (req, res) => {
 
   const team = gameState.joinedTeams[teamId];
   if (!team || team.deviceId !== deviceId) {
-    return res.status(403).json({ error: 'Dispositivo no autorizado para este equipo.' });
+    return res.status(403).json({ error: 'Dispositivo no autorizado.' });
   }
 
   gameState.votes[teamId] = targetId;
@@ -97,6 +97,17 @@ app.post('/api/admin/:action', (req, res) => {
       gameState.currentCaseIndex--;
       gameState.votes = {};
       gameState.revealDone = false;
+    }
+  } else if (action === 'quick-advance') {
+    // Revela e inmediatamente avanza al siguiente caso
+    if (!gameState.revealDone) {
+      gameState.revealDone = true;
+    } else {
+      if (gameState.currentCaseIndex < CASOS_FIJOS.length - 1) {
+        gameState.currentCaseIndex++;
+        gameState.votes = {};
+        gameState.revealDone = false;
+      }
     }
   } else if (action === 'reset') {
     gameState = {
