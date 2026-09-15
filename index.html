@@ -33,7 +33,7 @@
     header { margin-top: 6px; margin-bottom: 12px; }
     h1 {
       font-family: 'Cinzel', serif;
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       letter-spacing: 2px;
       color: #fff;
     }
@@ -41,7 +41,7 @@
       color: var(--red);
       font-family: 'Space Grotesk', sans-serif;
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       letter-spacing: 2px;
       margin-top: 4px;
     }
@@ -59,7 +59,7 @@
       align-items: center;
       justify-content: center;
       margin: 10px auto 14px;
-      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: transform 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .cylinder-center {
       width: 44px;
@@ -99,7 +99,7 @@
 
     .panel {
       width: 100%;
-      max-width: 440px;
+      max-width: 450px;
       background: var(--card);
       border: 1px solid #29293d;
       border-radius: 16px;
@@ -120,12 +120,22 @@
       border: 1px solid #3d3d54;
       color: #fff;
     }
-    .btn-main {
+    .btn-gold {
       background: var(--gold);
       color: #000;
       border: none;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 4px 15px rgba(255, 183, 3, 0.3);
+    }
+    .btn-main {
+      background: linear-gradient(135deg, var(--purple) 0%, #3a0ca3 100%);
+      color: #fff;
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(114, 9, 183, 0.35);
     }
     .btn-secondary {
       background: rgba(255, 255, 255, 0.05);
@@ -146,7 +156,6 @@
       line-height: 1.45;
     }
 
-    /* Opciones neutras para debate difícil */
     .options-wrapper {
       display: flex;
       flex-direction: column;
@@ -220,9 +229,8 @@
     }
 
     .hearts-bar {
-      font-size: 1.15rem;
-      letter-spacing: 3px;
-      transition: all 0.3s ease;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
     }
 
     .qr-card {
@@ -254,6 +262,21 @@
       font-size: 0.72rem;
       text-transform: uppercase;
     }
+
+    .grid-teams {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .team-admin-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid #29293d;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -264,17 +287,57 @@
     <h1>RULETA RUSA<span>EL REVÓLVER DE MARVEL MORENO</span></h1>
   </header>
 
-  <!-- Selección inicial & QR -->
-  <div class="panel" id="box-login">
-    <div class="qr-card">
-      <div style="font-size: 0.8rem; font-weight: 800; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px;">
-        📱 ESCANEA PARA UNIRTE CON TU EQUIPO
-      </div>
-      <div id="qr-code-svg" style="background:#fff; padding:8px; border-radius:10px;"></div>
-      <div style="font-size: 0.78rem; color: #aaa; margin-top: 8px; word-break: break-all;" id="qr-url-text"></div>
+  <!-- PANTALLA DE SELECCIÓN DE ROL / MODO -->
+  <div class="panel" id="box-role-select">
+    <p style="font-size: 0.92rem; color: #aaa; margin-bottom: 10px;">
+      Selecciona tu modo de acceso:
+    </p>
+
+    <button class="btn-gold" onclick="entrarComoAdmin()" style="padding: 16px;">
+      🖥️ PANEL DE ADMIN / PROYECTOR<br>
+      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR, ver tablero en vivo de todos los grupos y controlar la clase</span>
+    </button>
+
+    <button class="btn-main" onclick="entrarComoParticipante()" style="margin-top: 14px; padding: 16px;">
+      📱 UNIRSE COMO PARTICIPANTE (CELULAR)<br>
+      <span style="font-size:0.75rem; font-weight:normal;">Responder dilemas, girar el revólver y proteger tus 6 corazones</span>
+    </button>
+  </div>
+
+  <!-- VISTA DE ADMIN / PROYECTOR -->
+  <div class="panel" id="box-admin-view" style="display:none;">
+    <div style="font-size:0.85rem; font-weight:bold; color:var(--gold); letter-spacing:1px; margin-bottom:10px;">
+      👑 PANEL DE CONTROL Y PROYECTOR DE CLASE
     </div>
 
-    <p style="font-size: 0.88rem; color: #aaa;">Selecciona tu equipo para entrar a la mesa de dilemas:</p>
+    <div class="qr-card">
+      <div style="font-size: 0.8rem; font-weight: 800; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px;">
+        📱 ESCANEA PARA UNIRTE CON TU EQUIPO (1-6)
+      </div>
+      <div id="admin-qr-container" style="background:#fff; padding:8px; border-radius:10px;"></div>
+      <div style="font-size: 0.78rem; color: #aaa; margin-top: 8px; word-break: break-all;" id="admin-url-text"></div>
+    </div>
+
+    <div style="font-size:0.9rem; font-weight:bold; color:#fff; text-align:left; margin-top:14px;">
+      🏆 TABLA DE POSICIONES Y ESTADO EN VIVO:
+    </div>
+    <div id="admin-leaderboard-container"></div>
+
+    <button class="btn-secondary" onclick="adminResetAll()" style="margin-top:14px;">
+      🔄 Reiniciar Posiciones y Partida de la Clase
+    </button>
+    <button class="btn-secondary" onclick="volverASeleccionRole()" style="margin-top:8px;">
+      ← Volver al Menú Principal
+    </button>
+  </div>
+
+  <!-- VISTA DE PARTICIPANTE - SELECCIÓN DE EQUIPO -->
+  <div class="panel" id="box-team-login" style="display:none;">
+    <div style="font-size:0.8rem; font-weight:bold; color:var(--purple); letter-spacing:1px; margin-bottom:6px;">
+      📱 MESA DE RIESGO DE GRUPOS
+    </div>
+    <p style="font-size: 0.88rem; color: #aaa;">Selecciona tu equipo para iniciar las 6 rondas:</p>
+
     <select id="sel-grupo">
       <option value="1">Equipo 1</option>
       <option value="2">Equipo 2</option>
@@ -283,17 +346,19 @@
       <option value="5">Equipo 5</option>
       <option value="6">Equipo 6</option>
     </select>
-    <button class="btn-main" onclick="entrarJuego()">Entrar a la Ruleta de Riesgo</button>
+
+    <button class="btn-main" onclick="confirmarEquipo()">🚀 Iniciar Ruleta Rusa</button>
+    <button class="btn-secondary" onclick="volverASeleccionRole()">← Volver</button>
   </div>
 
-  <!-- Interfaz de la Ruleta -->
-  <div class="panel" id="box-game" style="display:none;">
+  <!-- VISTA DE PARTICIPANTE - INTERFAZ DE JUEGO -->
+  <div class="panel" id="box-game-view" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <span id="lbl-grupo" style="color:var(--gold); font-weight:700; font-size:0.85rem;"></span>
       <span id="lbl-balas" style="color:var(--red); font-weight:700; font-size:0.85rem;">Balas: 1/6</span>
     </div>
 
-    <!-- Indicador de 6 Corazones (1 por cada recámara) -->
+    <!-- Indicador de 6 Corazones de la Relación -->
     <div style="margin-top: 6px; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 12px; border-radius:8px;">
       <span style="font-size:0.75rem; color:#aaa; font-weight:bold;">Salud Relacional (6 Vidas):</span>
       <div class="hearts-bar" id="lbl-corazones">❤️❤️❤️❤️❤️❤️</div>
@@ -316,34 +381,24 @@
       <p id="case-desc"></p>
     </div>
 
-    <!-- Opciones de Decisióncompleja -->
+    <!-- Opciones de Decisión Compleja -->
     <div class="options-wrapper" id="actions-panel"></div>
 
     <div class="feedback" id="feedback-box"></div>
     <button class="btn-main" id="btn-next" style="display:none;" onclick="siguienteRonda()">Siguiente Situación ➔</button>
-  </div>
 
-  <!-- TOP DE POSICIONES DE GRUPOS -->
-  <div class="panel">
-    <div style="font-size:0.85rem; font-weight:bold; color:var(--gold); display:flex; justify-content:space-between; align-items:center;">
-      <span>🏆 TABLA DE POSICIONES EN VIVO</span>
-      <span style="font-size:0.7rem; color:#888;">6 Casos Críticos</span>
-    </div>
-    <div id="leaderboard-container"></div>
-    <button class="btn-secondary" onclick="resetLeaderboard()" style="margin-top:10px;">🔄 Reiniciar Posiciones de la Clase</button>
+    <button class="btn-secondary" onclick="volverASeleccionRole()" style="margin-top:14px;">
+      🚪 Salir de la Mesa
+    </button>
   </div>
 
   <script>
-    // Generador QR inline SVG
+    // SVG QR Generator Inline
     function generateQRInlineSVG(text, size = 150) {
       const encoded = encodeURIComponent(text);
       const googleChartApi = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}&margin=0`;
       return `<img src="${googleChartApi}" width="${size}" height="${size}" alt="Código QR" style="display:block; border-radius:6px;"/>`;
     }
-
-    const joinUrl = window.location.origin;
-    document.getElementById('qr-code-svg').innerHTML = generateQRInlineSVG(joinUrl, 150);
-    document.getElementById('qr-url-text').innerText = joinUrl;
 
     // Sintetizador Web Audio API
     class SoundFX {
@@ -441,86 +496,77 @@
     }
     const audio = new SoundFX();
 
-    // 6 CASOS COMPLEJOS Y REALISTAS (RESPUESTAS NO OBVIAS)
+    // 6 CASOS COMPLEJOS Y REALISTAS
     const situaciones = [
       {
-        titulo: "Caso 1: Vigilancia Digital y Exigencia de Transparencia",
-        desc: "Tu pareja descubre un chat antiguo con un excompañero. Te exige entregar todas tus contraseñas y cerrar tus redes sociales para 'demostrar que no tienes nada que ocultar y reconstruir la confianza'.",
+        titulo: "Caso 1: Vigilancia Digital y Exigencia de Contraseñas",
+        desc: "Tu pareja descubre un chat antiguo con un excompañero. Te exige entregar todas tus contraseñas y cerrar tus redes para 'demostrar que no tienes nada que ocultar y reconstruir la confianza'.",
         opciones: [
           {
             texto: "Entregar las contraseñas y borrar redes sociales para calmar la situación y demostrar que la relación es tu prioridad.",
             esLimiteFirme: false,
             balasAdd: 2,
-            corazonesCost: 2,
-            explicacion: "🚨 <b>FALSA PAZ (SUBMISIÓN):</b> Ceder la privacidad a cambio de calma no genera confianza; legitima el control. Añades 2 balas al tambor y pierdes 2 corazones de autonomía."
+            explicacion: "🚨 <b>FALSA PAZ (SUBMISIÓN):</b> Ceder la privacidad legítima el control. Se cargan 2 balas al tambor. ¡El revólver debe girar obligatoriamente!"
           },
           {
             texto: "Reaccionar con insultos, quitarle el teléfono a la fuerza y amenazar con hacerle lo mismo.",
             esLimiteFirme: false,
             balasAdd: 1,
-            corazonesCost: 1,
-            explicacion: "⚠️ <b>ESCALADA DE VIOLENCIA:</b> Responder con agresión verbal escala la peligrosidad de la dinámica sin desactivar el control. Se añade 1 bala al tambor."
+            explicacion: "⚠️ <b>ESCALADA DE VIOLENCIA:</b> Responder con agresión verbal escala el conflicto sin frenar el control. Se carga 1 bala extra y obliga a girar el revólver."
           },
           {
             texto: "Negar rotundamente el acceso a tus contraseñas, explicando que la confianza se basa en el respeto y no en la vigilancia.",
             esLimiteFirme: true,
             balasAdd: -1,
-            corazonesCost: 0,
-            explicacion: "🛑 <b>LÍMITE FIRME:</b> Defiendes tu privacidad como un derecho innegociable. Vacias 1 bala del tambor y proteges tu salud relacional."
+            explicacion: "🛑 <b>LÍMITE FIRME Y EFECTIVO:</b> Defiendes tu privacidad innegociable. Vacías 1 bala del tambor y conservas intactos tus corazones."
           }
         ]
       },
       {
         titulo: "Caso 2: El 'Accidente' de Ira y el Arrepentimiento Lloroso",
-        desc: "En una discusión, tu pareja tira una puerta con violencia rompiendo el marco y los fragmentos te rozan el brazo. Luego llora descontroladamente diciendo: 'Perdóname, fue un accidente por la rabia, jamás te haría daño porque eres mi vida'.",
+        desc: "En una discusión, tu pareja tira una puerta con violencia rompiendo el marco y las esquirlas te rozan el brazo. Luego llora descontroladamente diciendo: 'Perdóname, fue un accidente por la rabia, jamás te haría daño porque te amo'.",
         opciones: [
           {
-            texto: "Consolarlo, aceptar sus disculpas y prometerle que no volverás a tocar ese tema de discusión para evitar que se altere.",
+            texto: "Consolarlo/a, aceptar sus disculpas y prometerle que no volverás a tocar ese tema para evitar que se altere.",
             esLimiteFirme: false,
             balasAdd: 2,
-            corazonesCost: 2,
-            explicacion: "🚨 <b>NORMALIZACIÓN DEL MALTRATO:</b> Responsabilizarte por la rabia del otro es la trampa clásica. Se añaden 2 balas y pierdes 2 corazones."
+            explicacion: "🚨 <b>NORMALIZACIÓN DEL MALTRATO:</b> Responsabilizarte por la rabia del otro fortalece el ciclo abusivo. Cargaste 2 balas y giraste el gatillo."
           },
           {
             texto: "Exigirle que pague la reparación de la puerta inmediatamente pero quedarte en su casa para supervisar que no rompa nada más.",
             esLimiteFirme: false,
             balasAdd: 1,
-            corazonesCost: 1,
-            explicacion: "⚠️ <b>REPARACIÓN SUPERFICIAL:</b> Resolver el daño material sin atender la agresión física encubierta mantiene el peligro activo."
+            explicacion: "⚠️ <b>REPARACIÓN SUPERFICIAL:</b> Reparar lo material sin atender la agresión encubierta mantiene el peligro activo. Cargaste 1 bala."
           },
           {
             texto: "Retirarte de inmediato del lugar hacia un sitio seguro con tu familia o amigos, condicionando cualquier diálogo a apoyo profesional.",
             esLimiteFirme: true,
             balasAdd: -1,
-            corazonesCost: 0,
-            explicacion: "🛑 <b>PROTECCIÓN DEFINITIVA:</b> Rompes el ciclo de manipulación alejándote del peligro real. Vacias 1 bala del tambor."
+            explicacion: "🛑 <b>PROTECCIÓN DEFINITIVA:</b> Rompes la manipulación alejándote del peligro. Vacías 1 bala y salvas tus corazones."
           }
         ]
       },
       {
         titulo: "Caso 3: Regalos Costosos tras Humillaciones (José Caicedo)",
-        desc: "Tras humillarte y descalificarte frente a tus amigos, tu pareja llega al día siguiente con un regalo costoso (un celular gama alta) y entradas a un concierto, actuando con extrema cortesía social.",
+        desc: "Tras humillarte y descalificarte frente a tus amigos, tu pareja llega al día siguiente con un regalo costoso (un celular gama alta) y actúa con extrema cortesía social ante todos.",
         opciones: [
           {
             texto: "Aceptar el regalo y actuar con cordialidad en público para no arruinar el ambiente y pasar la página.",
             esLimiteFirme: false,
             balasAdd: 2,
-            corazonesCost: 2,
-            explicacion: "🚨 <b>COMPRAR EL PERDÓN:</b> Permitir que objetos materiales encubran la violencia verbal fortalece el ciclo del maltrato. Pierdes 2 corazones."
+            explicacion: "🚨 <b>COMPRAR EL PERDÓN:</b> Permitir que objetos materiales tapen la violencia verbal consolida el dominio del agresor. Cargaste 2 balas."
           },
           {
             texto: "Aceptar el regalo pero mantenerte frío y distante en privado durante un par de días como castigo silencioso.",
             esLimiteFirme: false,
             balasAdd: 1,
-            corazonesCost: 1,
-            explicacion: "⚠️ <b>AMBIVALENCIA PASIVA:</b> El castigo silencioso no establece un límite claro ni frena el chantaje del objeto."
+            explicacion: "⚠️ <b>AMBIVALENCIA PASIVA:</b> El silencio no marca un límite claro ni frena el soborno emocional. Cargaste 1 bala."
           },
           {
-            texto: "Rechazar el regalo firmemente, señalar que los objetos no borran la falta de respeto y exigir un compromiso real innegociable.",
+            texto: "Rechazar el regalo firmemente, señalar que los objetos no borran la falta de respeto y exigir un compromiso innegociable.",
             esLimiteFirme: true,
             balasAdd: -1,
-            corazonesCost: 0,
-            explicacion: "🛑 <b>DESARME ESTRATÉGICO:</b> No cedes al bribe/soborno emocional (como Ana María en el cuento). Vacias 1 bala del tambor."
+            explicacion: "🛑 <b>DESARME ESTRATÉGICO:</b> No cedes al bribe emocional (como Ana María en el cuento). Vacías 1 bala."
           }
         ]
       },
@@ -532,49 +578,43 @@
             texto: "Ceder de inmediato, prometerle que jamás lo/la dejarás y quedarte a su lado por miedo a que cometa una tragedia.",
             esLimiteFirme: false,
             balasAdd: 2,
-            corazonesCost: 2,
-            explicacion: "🚨 <b>REHENES EMOCIONALES:</b> Ceder al chantaje suicida te convierte en rehén del agresor. Añades 2 balas y pierdes 2 corazones."
+            explicacion: "🚨 <b>REHENES EMOCIONALES:</b> Ceder al chantaje suicida te convierte en rehén permanente. Cargaste 2 balas y forzaste el giro."
           },
           {
             texto: "Burlarte diciéndole que no tiene el valor de hacerlo y salir dejando la puerta cerrada con llave.",
             esLimiteFirme: false,
             balasAdd: 1,
-            corazonesCost: 1,
-            explicacion: "⚠️ <b>PROVOCACIÓN RIESGOSA:</b> Minimizar una amenaza de autodaño escala la crisis sin activar protocolos de emergencia."
+            explicacion: "⚠️ <b>PROVOCACIÓN RIESGOSA:</b> Burlarse de una amenaza de autodaño escala la crisis sin activar protocolos de ayuda. Cargaste 1 bala."
           },
           {
             texto: "Mantener tu decisión de separación pero contactar inmediatamente a sus familiares o emergencias para que asuman la atención médica.",
             esLimiteFirme: true,
             balasAdd: -1,
-            corazonesCost: 0,
             explicacion: "🛑 <b>LÍMITE CON RESPONSABILIDAD:</b> Transfieres la emergencia a las autoridades/familiares sin renunciar a tu libertad."
           }
         ]
       },
       {
-        titulo: "Caso 5: Aislamiento Progresivo y Crítica a la Red de Apoyo",
+        titulo: "Caso 5: Aislamiento Progresivo de la Red de Apoyo",
         desc: "Tu pareja critica a tus mejores amigos diciendo que 'son una mala influencia, sienten envidia de la relación y quieren vernos separados', pidiéndote no volver a verlos.",
         opciones: [
           {
             texto: "Distanciarte de tus amigos para evitar discusiones permanentes y demostrarle lealtad a la pareja.",
             esLimiteFirme: false,
             balasAdd: 2,
-            corazonesCost: 2,
-            explicacion: "🚨 <b>AISLAMIENTO INDUCIDO:</b> Destruir tu red de apoyo te deja indefenso/a ante futuras agresiones. Pierdes 2 corazones."
+            explicacion: "🚨 <b>AISLAMIENTO INDUCIDO:</b> Destruir tu red de apoyo te deja desprotegido/a ante futuras agresiones. Cargaste 2 balas."
           },
           {
             texto: "Mentirle diciendo que ya no ves a tus amigos pero seguir encontrándote con ellos a escondidas.",
             esLimiteFirme: false,
             balasAdd: 1,
-            corazonesCost: 1,
-            explicacion: "⚠️ <b>CLANDESTINIDAD FRÁGIL:</b> Ocultar tus relaciones mantiene la dinámica de control sobre tu vida diaria."
+            explicacion: "⚠️ <b>CLANDESTINIDAD FRÁGIL:</b> Ocultar tus amistades mantiene el control sobre tu conducta diaria. Cargaste 1 bala."
           },
           {
             texto: "Reafirmar tu autonomía para mantener a tus amistades y dejar en claro que tu red de apoyo no es negociable.",
             esLimiteFirme: true,
             balasAdd: -1,
-            corazonesCost: 0,
-            explicacion: "🛑 <b>PRESERVACIÓN DE AUTONOMÍA:</b> Mantener tus vínculos externos desarma la pretensión de dominio total."
+            explicacion: "🛑 <b>PRESERVACIÓN DE AUTONOMÍA:</b> Defender tus relaciones externas desarma la pretensión de dominio total."
           }
         ]
       },
@@ -586,21 +626,18 @@
             texto: "Soportar en silencio para guardar las apariencias sociales y familiares, esperando que el tiempo solucione las cosas.",
             esLimiteFirme: false,
             balasAdd: 2,
-            corazonesCost: 2,
             explicacion: "🚨 <b>SUMISIÓN DE APARIENCIAS:</b> Como Ana María al inicio del cuento, la tolerancia por imagen pública llena el tambor de balas."
           },
           {
             texto: "Hacer un reclamo impulsivo en redes sociales sin pruebas ni plan de contingencia personal.",
             esLimiteFirme: false,
             balasAdd: 1,
-            corazonesCost: 1,
-            explicacion: "⚠️ <b>DESAHOGO SIN ESTRATEGIA:</b> Expones el conflicto sin construir un cerco de protección efectivo ni asesoría."
+            explicacion: "⚠️ <b>DESAHOGO SIN ESTRATEGIA:</b> Expones el conflicto sin construir un cerco de protección ni asesoría."
           },
           {
             texto: "Documentar evidencias, apoyarte en personas de confianza y establecer un límite irreversible (la estrategia del revólver).",
             esLimiteFirme: true,
             balasAdd: -1,
-            corazonesCost: 0,
             explicacion: "🛑 <b>DESARME DEFINITIVO:</b> Como Ana María al tomar el revólver, inviertes el poder y marcas una frontera inquebrantable."
           }
         ]
@@ -611,24 +648,33 @@
     let nombreEquipo = "EQUIPO 1";
     let rondaActual = 0;
     let balasEnTambor = 1;
-    let corazonesRestantes = 6; // ❤️ 6 Corazones de Salud Relacional
+    let corazonesRestantes = 6;
     let puntosEquipo = 0;
-    let limitesPuestosCount = 0;
     let angulo = 0;
 
-    let leaderboard = JSON.parse(localStorage.getItem('revolver_leaderboard')) || {
-      "1": { equipo: "Equipo 1", puntos: 0, corazones: 6, estado: "En Espera" },
-      "2": { equipo: "Equipo 2", puntos: 0, corazones: 6, estado: "En Espera" },
-      "3": { equipo: "Equipo 3", puntos: 0, corazones: 6, estado: "En Espera" },
-      "4": { equipo: "Equipo 4", puntos: 0, corazones: 6, estado: "En Espera" },
-      "5": { equipo: "Equipo 5", puntos: 0, corazones: 6, estado: "En Espera" },
-      "6": { equipo: "Equipo 6", puntos: 0, corazones: 6, estado: "En Espera" }
-    };
+    let serverTeamsState = {};
 
-    function renderLeaderboard() {
-      const container = document.getElementById('leaderboard-container');
-      const sorted = Object.keys(leaderboard).map(k => ({ id: k, ...leaderboard[k] }))
-        .sort((a, b) => b.puntos - a.puntos);
+    async function syncStateWithServer() {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.teams) {
+            serverTeamsState = data.teams;
+            renderAdminLeaderboard();
+          }
+        }
+      } catch (e) {}
+    }
+
+    setInterval(syncStateWithServer, 1000);
+
+    function renderAdminLeaderboard() {
+      const container = document.getElementById('admin-leaderboard-container');
+      if (!container) return;
+
+      const sorted = Object.keys(serverTeamsState).map(k => ({ id: k, ...serverTeamsState[k] }))
+        .sort((a, b) => b.score - a.score);
 
       let html = `
         <table class="leaderboard-table">
@@ -637,6 +683,7 @@
               <th>Pos</th>
               <th>Equipo</th>
               <th>Salud (6❤️)</th>
+              <th>Balas</th>
               <th>Puntos</th>
               <th>Estado</th>
             </tr>
@@ -646,35 +693,76 @@
 
       sorted.forEach((item, index) => {
         const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}º`;
-        const heartsTxt = "❤️".repeat(Math.max(0, item.corazones)) + "💔".repeat(Math.max(0, 6 - item.corazones));
+        const heartsTxt = "❤️".repeat(Math.max(0, item.hearts || 0)) + "💔".repeat(Math.max(0, 6 - (item.hearts || 0)));
         html += `
           <tr>
             <td><strong>${medal}</strong></td>
-            <td><strong>${item.equipo}</strong></td>
+            <td><strong>${item.name || `Equipo ${item.id}`}</strong></td>
             <td style="font-size:0.75rem;">${heartsTxt}</td>
-            <td><strong style="color:var(--gold);">${item.puntos} pts</strong></td>
-            <td><span style="font-size:0.72rem; padding:2px 5px; border-radius:4px; background:${item.estado.includes('Sobrevivió') ? 'rgba(6,214,160,0.2)' : item.estado.includes('Colapsó') ? 'rgba(255,51,102,0.2)' : 'rgba(255,255,255,0.06)'}; color:${item.estado.includes('Sobrevivió') ? 'var(--green)' : item.estado.includes('Colapsó') ? 'var(--red)' : '#aaa'};">${item.estado}</span></td>
+            <td><strong style="color:var(--red);">${item.bullets || 1}/6</strong></td>
+            <td><strong style="color:var(--gold);">${item.score || 0} pts</strong></td>
+            <td><span style="font-size:0.72rem; padding:2px 5px; border-radius:4px; background:${(item.status || '').includes('Firme') || (item.status || '').includes('Sobrevivió') ? 'rgba(6,214,160,0.2)' : (item.status || '').includes('Disparo') || (item.status || '').includes('Colapsó') ? 'rgba(255,51,102,0.2)' : 'rgba(255,255,255,0.06)'}; color:${(item.status || '').includes('Firme') || (item.status || '').includes('Sobrevivió') ? 'var(--green)' : (item.status || '').includes('Disparo') || (item.status || '').includes('Colapsó') ? 'var(--red)' : '#aaa'};">${item.status || 'En Espera'}</span></td>
           </tr>
         `;
       });
 
       html += `</tbody></table>`;
       container.innerHTML = html;
-      localStorage.setItem('revolver_leaderboard', JSON.stringify(leaderboard));
     }
 
-    function resetLeaderboard() {
-      if (confirm("¿Deseas reiniciar la tabla de posiciones de todos los grupos?")) {
-        leaderboard = {
-          "1": { equipo: "Equipo 1", puntos: 0, corazones: 6, estado: "En Espera" },
-          "2": { equipo: "Equipo 2", puntos: 0, corazones: 6, estado: "En Espera" },
-          "3": { equipo: "Equipo 3", puntos: 0, corazones: 6, estado: "En Espera" },
-          "4": { equipo: "Equipo 4", puntos: 0, corazones: 6, estado: "En Espera" },
-          "5": { equipo: "Equipo 5", puntos: 0, corazones: 6, estado: "En Espera" },
-          "6": { equipo: "Equipo 6", puntos: 0, corazones: 6, estado: "En Espera" }
-        };
-        renderLeaderboard();
+    async function adminResetAll() {
+      if (confirm("¿Reiniciar toda la partida de la clase y restablecer a los 6 equipos a 6 corazones y 1 bala?")) {
+        try {
+          await fetch('/api/admin/reset', { method: 'POST' });
+          syncStateWithServer();
+        } catch (e) {}
       }
+    }
+
+    function entrarComoAdmin() {
+      audio.playClick();
+      document.getElementById('box-role-select').style.display = 'none';
+      document.getElementById('box-admin-view').style.display = 'block';
+
+      const joinUrl = window.location.origin;
+      document.getElementById('admin-qr-container').innerHTML = generateQRInlineSVG(joinUrl, 160);
+      document.getElementById('admin-url-text').innerText = joinUrl;
+
+      syncStateWithServer();
+    }
+
+    function entrarComoParticipante() {
+      audio.playClick();
+      document.getElementById('box-role-select').style.display = 'none';
+      document.getElementById('box-team-login').style.display = 'block';
+    }
+
+    function volverASeleccionRole() {
+      audio.playClick();
+      document.getElementById('box-admin-view').style.display = 'none';
+      document.getElementById('box-team-login').style.display = 'none';
+      document.getElementById('box-game-view').style.display = 'none';
+      document.getElementById('box-role-select').style.display = 'block';
+    }
+
+    function confirmarEquipo() {
+      audio.playClick();
+      const sel = document.getElementById('sel-grupo');
+      equipoActualId = sel.value;
+      nombreEquipo = sel.options[sel.selectedIndex].text.toUpperCase();
+
+      rondaActual = 0;
+      balasEnTambor = 1;
+      corazonesRestantes = 6;
+      puntosEquipo = 0;
+
+      document.getElementById('box-team-login').style.display = 'none';
+      document.getElementById('box-game-view').style.display = 'block';
+      document.getElementById('lbl-grupo').innerText = nombreEquipo;
+
+      actualizarCorazonesUI();
+      actualizarTambor();
+      mostrarRonda();
     }
 
     function actualizarCorazonesUI() {
@@ -686,41 +774,29 @@
       }
     }
 
-    function entrarJuego() {
-      audio.playClick();
-      const sel = document.getElementById('sel-grupo');
-      equipoActualId = sel.value;
-      nombreEquipo = sel.options[sel.selectedIndex].text.toUpperCase();
+    function actualizarTambor() {
+      for (let i = 0; i < 6; i++) {
+        document.getElementById(`slot-${i}`).className = "chamber " + `c${i+1}`;
+      }
+      for (let i = 0; i < balasEnTambor; i++) {
+        document.getElementById(`slot-${i}`).classList.add('has-bullet');
+      }
+      document.getElementById('lbl-balas').innerText = `Balas: ${balasEnTambor}/6`;
+    }
 
-      rondaActual = 0;
-      balasEnTambor = 1;
-      corazonesRestantes = 6;
-      puntosEquipo = 0;
-      limitesPuestosCount = 0;
-
-      document.getElementById('box-login').style.display = 'none';
-      document.getElementById('box-game').style.display = 'block';
-      document.getElementById('lbl-grupo').innerText = nombreEquipo;
-
-      actualizarCorazonesUI();
-      actualizarTambor();
-      mostrarRonda();
+    function girarTambor(callback) {
+      audio.playSpin();
+      angulo += 360 + Math.floor(Math.random() * 6) * 60;
+      document.getElementById('tambor').style.transform = `rotate(${angulo}deg)`;
+      setTimeout(callback, 700);
     }
 
     function mostrarRonda() {
       if (corazonesRestantes <= 0) {
         audio.playBang();
-        leaderboard[equipoActualId] = {
-          equipo: nombreEquipo,
-          puntos: puntosEquipo,
-          corazones: 0,
-          estado: "💥 Colapsó"
-        };
-        renderLeaderboard();
-
         document.getElementById('case-title').innerText = "💔 LA RELACIÓN HA COLAPSADO";
         document.getElementById('case-desc').innerHTML = `
-          Se agotaron los 6 corazones de salud emocional. Ceder ante el control o escalar la agresión acumuló demasiadas balas y causó un daño irreversible.
+          Se agotaron los 6 corazones de salud emocional. Ceder ante la manipulación acumuló 6 balas y causó una agresión irreversible.
           <br><br>
           <strong>Puntuación Final:</strong> ${puntosEquipo} pts.
         `;
@@ -735,17 +811,9 @@
         const bonoFinal = corazonesRestantes * 100;
         puntosEquipo += bonoFinal;
 
-        leaderboard[equipoActualId] = {
-          equipo: nombreEquipo,
-          puntos: puntosEquipo,
-          corazones: corazonesRestantes,
-          estado: "🏆 Sobrevivió"
-        };
-        renderLeaderboard();
-
         document.getElementById('case-title').innerText = "SOBREVIVISTE A LA RULETA";
         document.getElementById('case-desc').innerHTML = `
-          Demostraron discernment crítico: en una relación abusiva, tolerar o ceder es jugar a la ruleta rusa. Poner límites contundentes e innegociables desarmó la violencia.
+          Demostraron criterio pedagógico: en una relación abusiva, tolerar o ceder es jugar a la ruleta rusa. Poner límites contundentes e innegociables desarmó la violencia.
           <br><br>
           <strong>🎯 Puntuación Final: ${puntosEquipo} pts</strong> (Bono por ${corazonesRestantes} corazones preservados).
           <div class="closing-reflection">
@@ -763,7 +831,6 @@
       document.getElementById('case-title').innerText = `CASO ${rondaActual + 1} DE 6: ${s.titulo}`;
       document.getElementById('case-desc').innerText = s.desc;
 
-      // Renderizar 3 opciones de respuesta complejas (sin colores obvios)
       const actionsPanel = document.getElementById('actions-panel');
       let optionsHTML = '';
       const letters = ['A', 'B', 'C'];
@@ -783,24 +850,7 @@
       document.getElementById('actions-panel').style.display = 'flex';
     }
 
-    function actualizarTambor() {
-      for (let i = 0; i < 6; i++) {
-        document.getElementById(`slot-${i}`).className = "chamber " + `c${i+1}`;
-      }
-      for (let i = 0; i < balasEnTambor; i++) {
-        document.getElementById(`slot-${i}`).classList.add('has-bullet');
-      }
-      document.getElementById('lbl-balas').innerText = `Balas: ${balasEnTambor}/6`;
-    }
-
-    function girarTambor(callback) {
-      audio.playSpin();
-      angulo += 360 + Math.floor(Math.random() * 6) * 60;
-      document.getElementById('tambor').style.transform = `rotate(${angulo}deg)`;
-      setTimeout(callback, 650);
-    }
-
-    function tomarDecision(optIdx) {
+    async function tomarDecision(optIdx) {
       document.getElementById('actions-panel').style.display = 'none';
       const fb = document.getElementById('feedback-box');
       fb.style.display = 'block';
@@ -810,14 +860,14 @@
       const elegida = s.opciones[optIdx];
 
       if (!elegida.esLimiteFirme) {
-        // Causalidad: Añade balas y resta corazones
+        // Respuesta INCORRECTA / MAL: Carga bala y OBLIGA A GIRAR EL REVÓLVER
         balasEnTambor = Math.min(6, balasEnTambor + elegida.balasAdd);
-        corazonesRestantes = Math.max(0, corazonesRestantes - elegida.corazonesCost);
-        actualizarCorazonesUI();
         actualizarTambor();
 
-        girarTambor(() => {
+        girarTambor(async () => {
+          // Evaluar disparo al apretar el gatillo
           const disparo = Math.random() < (balasEnTambor / 6);
+
           if (disparo) {
             audio.playBang();
             corazonesRestantes = Math.max(0, corazonesRestantes - 1);
@@ -831,46 +881,60 @@
             fb.style.background = '#381216';
             fb.style.border = '1px solid var(--red)';
             fb.style.color = '#ffccd5';
-            fb.innerHTML = `💥 <b>¡BANG! EL DISPARO SE ACTIVÓ (💔 Pierden 1 Corazón Extra)</b><br>${elegida.explicacion}<br><br><small>Quedan ${corazonesRestantes} corazones de vida relacional.</small>`;
+            fb.innerHTML = `💥 <b>¡BANG! EL DISPARO SE ACTIVÓ (💔 PIERDEN 1 CORAZÓN)</b><br>${elegida.explicacion}<br><br><small>Al responder mal, forzaron el giro del tambor y perdieron 1 vida. Quedan ${corazonesRestantes} corazones de salud relacional.</small>`;
           } else {
             audio.playClick();
             puntosEquipo += 40;
             fb.style.background = '#2b2310';
             fb.style.border = '1px solid var(--gold)';
             fb.style.color = '#ffe082';
-            fb.innerHTML = `⚠️ <b>CLIC... TE SALVASTE POR SUERTE (+40 pts)</b><br>${elegida.explicacion}<br><br><small>El tambor tiene ${balasEnTambor} balas cargadas.</small>`;
+            fb.innerHTML = `⚠️ <b>CLIC... SE SALVARON POR PURA SUERTE (+40 pts)</b><br>${elegida.explicacion}<br><br><small>El revólver giró pero la recámara estaba vacía. El tambor queda ahora cargado con ${balasEnTambor} balas para la siguiente ronda.</small>`;
           }
 
-          leaderboard[equipoActualId] = {
-            equipo: nombreEquipo,
-            puntos: puntosEquipo,
-            corazones: corazonesRestantes,
-            estado: corazonesRestantes > 0 ? "Jugando" : "💥 Colapsó"
-          };
-          renderLeaderboard();
+          try {
+            await fetch('/api/team/action', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                teamId: equipoActualId,
+                caseIndex: rondaActual,
+                optionIdx: optIdx,
+                isCorrect: false,
+                bulletsAdd: elegida.balasAdd,
+                pointsAdd: 40
+              })
+            });
+            syncStateWithServer();
+          } catch (e) {}
         });
 
       } else {
-        // Opción Límite Firme: Vacia bala y protege salud
-        balasEnTambor = Math.max(1, balasEnTambor + elegida.balasAdd);
-        limitesPuestosCount++;
+        // Respuesta CORRECTA (Límite Firme): Vacia bala y asegura posición
+        balasEnTambor = Math.max(1, balasEnTambor - 1);
         puntosEquipo += 150;
         actualizarTambor();
 
-        girarTambor(() => {
+        girarTambor(async () => {
           audio.playChime();
           fb.style.background = '#0e2b24';
           fb.style.border = '1px solid var(--green)';
           fb.style.color = '#c7f9cc';
-          fb.innerHTML = `🛑 <b>LÍMITE FIRME Y EFECTIVO (+150 pts)</b><br>${elegida.explicacion}<br><br><small>Vaciaron 1 bala del tambor y protegieron sus 6 corazones.</small>`;
+          fb.innerHTML = `🛑 <b>RESPUESTA CORRECTA - LÍMITE FIRME (+150 pts)</b><br>${elegida.explicacion}<br><br><small>Desarmaron la manipulación en seco, vaciaron 1 bala del tambor y protegieron sus 6 corazones intactos.</small>`;
 
-          leaderboard[equipoActualId] = {
-            equipo: nombreEquipo,
-            puntos: puntosEquipo,
-            corazones: corazonesRestantes,
-            estado: "Jugando"
-          };
-          renderLeaderboard();
+          try {
+            await fetch('/api/team/action', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                teamId: equipoActualId,
+                caseIndex: rondaActual,
+                optionIdx: optIdx,
+                isCorrect: true,
+                pointsAdd: 150
+              })
+            });
+            syncStateWithServer();
+          } catch (e) {}
         });
       }
     }
@@ -880,8 +944,6 @@
       rondaActual++;
       mostrarRonda();
     }
-
-    renderLeaderboard();
   </script>
 </body>
 </html>
