@@ -3,1191 +3,498 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Revólver: Modo Kahoot Express (Equipos Bloqueados)</title>
-  
-  <meta name="theme-color" content="#0d0e12">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+  <title>Ruleta Rusa: El Revólver</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Cinzel:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090a10;
-      --card: rgba(18, 20, 32, 0.85);
-      --accent-red: #ff2a54;
-      --accent-green: #00f5a0;
-      --accent-gold: #ffc700;
-      --accent-purple: #7b2cbf;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --border: rgba(255, 255, 255, 0.1);
+      --bg: #09090e;
+      --card: #15151f;
+      --red: #ff3366;
+      --gold: #ffb703;
+      --green: #06d6a0;
+      --text: #f8f9fa;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: radial-gradient(circle at 50% 0%, #200839 0%, var(--bg) 75%);
+      background: radial-gradient(circle at top, #241226 0%, var(--bg) 85%);
       color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Space Grotesk', sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 16px;
       text-align: center;
+      user-select: none;
     }
-
-    header {
-      margin-top: 8px;
-      margin-bottom: 12px;
-    }
-
+    header { margin-top: 10px; margin-bottom: 12px; }
     h1 {
-      font-size: 1.45rem;
-      font-weight: 900;
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
       letter-spacing: 2px;
-      text-transform: uppercase;
       color: #fff;
-      text-shadow: 0 0 20px rgba(123, 44, 191, 0.5);
+    }
+    h1 span {
+      color: var(--red);
+      font-family: 'Space Grotesk', sans-serif;
+      display: block;
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      margin-top: 4px;
     }
 
-    h1 span {
-      color: var(--accent-gold);
-      display: block;
+    /* Tambor visual */
+    .cylinder-wrap {
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: #111118;
+      border: 4px solid #29293d;
+      box-shadow: 0 0 25px rgba(0,0,0,0.8), inset 0 0 15px #000;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px auto 16px;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .cylinder-center {
+      width: 44px;
+      height: 44px;
+      background: #08080b;
+      border: 3px solid #3d3d54;
+      border-radius: 50%;
+    }
+    .chamber {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #20202e;
+      border: 2px solid #3d3d54;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 0.75rem;
-      font-weight: 800;
-      letter-spacing: 3px;
-      margin-top: 4px;
+      font-weight: 700;
+      color: #666;
+      transition: all 0.3s;
+    }
+    .c1 { top: 8px; left: 67px; }
+    .c2 { top: 37px; right: 12px; }
+    .c3 { bottom: 37px; right: 12px; }
+    .c4 { bottom: 8px; left: 67px; }
+    .c5 { bottom: 37px; left: 12px; }
+    .c6 { top: 37px; left: 12px; }
+
+    .chamber.has-bullet {
+      background: radial-gradient(circle, #ff5c8a 20%, var(--red) 90%);
+      color: #fff;
+      border-color: #fff;
+      box-shadow: 0 0 12px var(--red);
     }
 
     .panel {
       width: 100%;
-      max-width: 480px;
+      max-width: 420px;
       background: var(--card);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      margin-top: 8px;
-      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid #29293d;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    input, select, button {
+    select, button {
       width: 100%;
-      padding: 14px 16px;
-      border-radius: 12px;
-      font-size: 0.92rem;
+      padding: 13px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-family: inherit;
       margin-top: 10px;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
-    input, select {
-      background: rgba(15, 17, 26, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+    select {
+      background: #1f1f2e;
+      border: 1px solid #3d3d54;
       color: #fff;
     }
-
-    option:disabled {
-      color: var(--accent-red);
-      background: #12131c;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--accent-gold);
-      box-shadow: 0 0 12px rgba(255, 199, 0, 0.2);
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: 800;
-      border: none;
-      letter-spacing: 0.5px;
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
     .btn-main {
-      background: linear-gradient(135deg, var(--accent-purple) 0%, #480ca8 100%);
-      color: #fff;
-      text-transform: uppercase;
-      box-shadow: 0 6px 20px rgba(123, 44, 191, 0.4);
-    }
-
-    .btn-gold {
-      background: linear-gradient(135deg, #ffc700 0%, #ff9100 100%);
+      background: var(--gold);
       color: #000;
-      text-transform: uppercase;
-      box-shadow: 0 6px 20px rgba(255, 199, 0, 0.35);
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    .btn-express {
-      background: linear-gradient(135deg, #00f5a0 0%, #00b4d8 100%);
-      color: #05141d;
-      text-transform: uppercase;
-      box-shadow: 0 6px 20px rgba(0, 245, 160, 0.35);
-    }
-
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.82rem;
-      font-weight: 600;
-      margin-top: 12px;
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-    }
-
-    .teams-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .team-badge-lobby {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px;
-      text-align: center;
-      transition: all 0.3s ease;
-    }
-
-    .team-badge-lobby.connected {
-      background: rgba(0, 245, 160, 0.12);
-      border: 1.5px solid var(--accent-green);
-      color: var(--accent-green);
-      box-shadow: 0 0 15px rgba(0, 245, 160, 0.2);
-    }
-
-    .role-card {
-      padding: 16px;
-      border-radius: 14px;
-      margin: 14px 0;
-      line-height: 1.5;
+    .case-box {
+      background: #101018;
+      border-left: 4px solid var(--gold);
+      padding: 14px;
+      border-radius: 8px;
+      margin: 12px 0;
       text-align: left;
       font-size: 0.88rem;
+      line-height: 1.45;
     }
 
-    .impostor {
-      background: rgba(255, 42, 84, 0.12);
-      border: 1.5px solid var(--accent-red);
-      color: #ffccd5;
-    }
-
-    .aliado {
-      background: rgba(0, 245, 160, 0.12);
-      border: 1.5px solid var(--accent-green);
-      color: #c7f9cc;
-    }
-
-    .dilema-box {
-      background: rgba(10, 11, 18, 0.8);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px;
-      margin-top: 14px;
-      text-align: left;
-      font-size: 0.92rem;
-      line-height: 1.55;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-      background: var(--accent-gold);
-      color: #000;
-      text-transform: uppercase;
-    }
-
-    .btn-vote {
-      background: rgba(30, 34, 50, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #f1f5f9;
-      text-align: left;
-      margin-top: 8px;
-      padding: 14px 16px;
-      font-size: 0.88rem;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .btn-vote:hover {
-      border-color: var(--accent-gold);
-      background: rgba(255, 199, 0, 0.08);
-    }
-
-    .btn-vote.selected {
-      border-color: var(--accent-gold);
-      background: rgba(255, 199, 0, 0.16);
-      box-shadow: 0 0 15px rgba(255, 199, 0, 0.2);
-    }
-
-    .waiting-box {
-      padding: 24px 18px;
-      background: rgba(255, 199, 0, 0.06);
-      border: 1.5px dashed var(--accent-gold);
-      border-radius: 16px;
-      color: var(--accent-gold);
-      margin-top: 14px;
-    }
-
-    .spin-pulse {
-      font-size: 2rem;
-      margin-bottom: 8px;
-      display: inline-block;
-      animation: pulse 1.5s infinite ease-in-out;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.8; }
-      50% { transform: scale(1.15); opacity: 1; }
-      100% { transform: scale(1); opacity: 0.8; }
-    }
-
-    .error-msg-box {
-      background: rgba(255, 42, 84, 0.18);
-      border: 1.5px solid var(--accent-red);
-      color: #ffccd5;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      margin-top: 10px;
-      display: none;
-    }
-
-    .qr-hero-card {
-      background: rgba(255, 199, 0, 0.05);
-      border: 1.5px solid var(--accent-gold);
-      border-radius: 18px;
-      padding: 20px;
-      margin-top: 10px;
+    .btn-action {
+      border: none;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-shadow: 0 0 30px rgba(255, 199, 0, 0.15);
-    }
-
-    .btn-copy {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--accent-gold);
-      color: var(--accent-gold);
-      padding: 10px 18px;
+      gap: 3px;
       font-size: 0.85rem;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-top: 12px;
-      font-weight: 700;
+      padding: 12px;
+      border-radius: 8px;
     }
+    .btn-tolerate { background: #d62828; }
+    .btn-limit { background: var(--green); color: #000; }
 
-    .cases-bar-wrapper {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      justify-content: center;
+    .flash {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.05s ease-out;
+      z-index: 9999;
     }
-
-    .case-pill-btn {
-      padding: 10px 18px;
-      border-radius: 10px;
+    .flash.active { opacity: 0.95; }
+    .feedback {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
       font-size: 0.85rem;
-      font-weight: 700;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      cursor: pointer;
-      margin-top: 0;
-      width: auto;
+      line-height: 1.4;
+      display: none;
     }
 
-    .case-pill-btn.active-case {
-      background: var(--accent-gold);
-      color: #000;
-      border-color: var(--accent-gold);
-      box-shadow: 0 0 12px rgba(255, 199, 0, 0.3);
-    }
-
-    .timer-badge {
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: var(--accent-gold);
-      font-family: 'Inter', monospace;
-      letter-spacing: 2px;
-      margin-bottom: 4px;
+    .closing-reflection {
+      background: rgba(255, 183, 3, 0.1);
+      border: 1.5px solid var(--gold);
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 14px;
+      text-align: left;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: #fff;
     }
   </style>
 </head>
 <body>
 
+  <div id="flash-screen" class="flash"></div>
+
   <header>
-    <h1>El Revólver<span>Modo Kahoot Express</span></h1>
+    <h1>RULETA RUSA<span>EL REVÓLVER DE MARVEL MORENO</span></h1>
   </header>
 
-  <!-- SELECCIÓN INICIAL -->
-  <div class="panel" id="box-role-select">
-    <p style="font-size: 0.92rem; color: var(--text-muted); margin-bottom: 6px;">
-      Selecciona tu acceso al sistema:
-    </p>
-
-    <button class="btn-gold" onclick="entrarComoAdmin()" style="padding: 16px;">
-      🖥️ PANEL DE ADMIN / PRESENTADOR<br>
-      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR, controlar velocidad y revelar resultados</span>
-    </button>
-
-    <button class="btn-main" onclick="entrarComoEquipo()" style="margin-top: 14px; padding: 16px;">
-      📱 UNIRSE COMO EQUIPO (CELULAR)<br>
-      <span style="font-size:0.75rem; font-weight:normal;">1 solo dispositivo permitido por cada equipo</span>
-    </button>
-  </div>
-
-  <!-- PANEL ADMIN -->
-  <div class="panel" id="box-admin-panel" style="display:none;">
-    <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-gold); letter-spacing:1px; margin-bottom:4px;">
-      👑 PANEL DE CONTROL DE ADMIN
-    </div>
-
-    <!-- ADMIN LOBBY -->
-    <div id="admin-phase-lobby">
-      <div class="qr-hero-card">
-        <div id="admin-qr-container" style="margin-bottom:10px;"></div>
-        <div style="font-size: 0.9rem; font-weight: 800; color: var(--text-bright);">📱 ESCANEA PARA UNIRTE CON TU EQUIPO</div>
-        <div style="font-size: 0.88rem; font-weight: 800; color: var(--accent-gold); margin-top:4px; word-break: break-all;" id="admin-url-text">
-          https://...
-        </div>
-        <button class="btn-copy" onclick="copiarEnlaceVercel()">📋 Copiar Enlace Directo</button>
-      </div>
-
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 14px;">
-        Equipos Conectados (1 dispositivo por equipo):
-      </p>
-
-      <div class="teams-grid" id="admin-lobby-grid"></div>
-
-      <button class="btn-gold" id="btn-admin-start" onclick="adminStartGame()" style="margin-top: 18px; padding: 16px;" disabled>
-        🚀 INICIAR ACTIVIDAD EXPRESS (0/6 EQUIPOS)
-      </button>
-
-      <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Sala / Limpiar Equipos</button>
-    </div>
-
-    <!-- ADMIN GAME PANEL -->
-    <div id="admin-phase-game" style="display:none;">
-      <div class="cases-bar-wrapper">
-        <button id="btn-case-tab-0" class="case-pill-btn active-case" onclick="adminSelectCaseIndex(0)">Caso 1</button>
-        <button id="btn-case-tab-1" class="case-pill-btn" onclick="adminSelectCaseIndex(1)">Caso 2</button>
-        <button id="btn-case-tab-2" class="case-pill-btn" onclick="adminSelectCaseIndex(2)">Caso 3</button>
-      </div>
-
-      <div class="dilema-box">
-        <div class="tag" id="admin-case-tag">CASO 1 DE 3</div>
-        <h3 id="admin-case-title" style="color:var(--accent-gold); font-size:1.05rem; margin-bottom:6px;"></h3>
-        <p id="admin-case-desc" style="font-size:0.95rem; line-height:1.5; color:#fff;"></p>
-      </div>
-
-      <!-- PANEL DE CONTROL DE TURNO (1 MINUTO) -->
-      <div style="background: linear-gradient(135deg, rgba(114,9,183,0.3) 0%, rgba(58,12,163,0.3) 100%); border: 1.5px solid var(--accent-purple); padding: 14px; border-radius: 14px; margin-top: 12px; text-align: left;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-weight:800; color:var(--accent-gold); font-size:0.92rem;">
-            🎤 TURNO DE HABLA (1 MINUTO POR GRUPO)
-          </span>
-          <span id="admin-turn-countdown" style="font-weight:900; background:var(--accent-gold); color:#000; padding:4px 10px; border-radius:8px; font-size:0.9rem;">
-            ⏱️ 60s
-          </span>
-        </div>
-
-        <div id="admin-turn-status" style="margin-top:8px; font-size:0.95rem; font-weight:700; color:#fff;">
-          📢 Turno actual: Equipo 1
-        </div>
-
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <button class="btn-main" onclick="nextTurnServer()" style="padding:10px; font-size:0.82rem; margin-top:0;">
-            ⏭️ Ceder Turno al Siguiente Grupo
-          </button>
-          <button class="btn-secondary" onclick="resetTurnTimer()" style="padding:10px; font-size:0.82rem; margin-top:0; width:110px;">
-            🔄 60s
-          </button>
-        </div>
-      </div>
-
-      <div style="margin-top: 12px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px;">
-        <div style="font-size:0.85rem; color:var(--text-muted);" id="admin-votes-count">
-          0 / 4 Votos de Resistencia Recibidos
-        </div>
-      </div>
-
-      <button class="btn-express" id="btn-admin-express" onclick="adminQuickAdvance()" style="margin-top: 14px; padding: 16px;">
-        ⚡ REVELAR RESULTADOS Y PASAR AL SIGUIENTE
-      </button>
-
-      <div id="admin-reveal-panel" style="margin-top: 14px;"></div>
-
-      <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Juego</button>
-    </div>
-  </div>
-
-  <!-- VISTA ESTUDIANTE -->
-  <div class="panel" id="box-team-login" style="display:none;">
-    <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-purple); letter-spacing:1px; margin-bottom:4px;">
-      📱 REGISTRO DE EQUIPO (1 DISPOSITIVO POR GRUPO)
-    </div>
-
-    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top:6px;">
-      Selecciona tu grupo. Los equipos ocupados por otro teléfono están bloqueados:
-    </div>
-
-    <select id="sel-team-id">
-      <option value="1">Equipo 1 (DISPONIBLE)</option>
-      <option value="2">Equipo 2 (DISPONIBLE)</option>
-      <option value="3">Equipo 3 (DISPONIBLE)</option>
-      <option value="4">Equipo 4 (DISPONIBLE)</option>
-      <option value="5">Equipo 5 (DISPONIBLE)</option>
-      <option value="6">Equipo 6 (DISPONIBLE)</option>
+  <!-- Selección inicial de combo -->
+  <div class="panel" id="box-login">
+    <p style="font-size: 0.88rem; color: #aaa;">Selecciona tu equipo para entrar a la mesa de riesgo:</p>
+    <select id="sel-grupo">
+      <option value="1">Equipo 1</option>
+      <option value="2">Equipo 2</option>
+      <option value="3">Equipo 3</option>
+      <option value="4">Equipo 4</option>
+      <option value="5">Equipo 5</option>
+      <option value="6">Equipo 6</option>
     </select>
-
-    <input type="text" id="input-vocero-name" placeholder="Nombre del Vocero Oficial" required autocomplete="off">
-
-    <div class="error-msg-box" id="join-error-box"></div>
-
-    <button class="btn-main" onclick="joinTeamServer()">
-      🚀 REGISTRAR Y UNIRSE AL LOBBY
-    </button>
-
-    <button class="btn-secondary" onclick="volverASeleccion()">← Volver</button>
+    <button class="btn-main" onclick="entrarJuego()">Entrar a la Ruleta</button>
   </div>
 
-  <!-- ESPERA LOBBY CLIENTE -->
-  <div class="panel" id="box-team-waiting" style="display:none;">
-    <div class="waiting-box">
-      <div class="spin-pulse">⏳</div>
-      <h3 style="font-size: 1.1rem; margin-bottom: 6px;">¡Registrado con Éxito!</h3>
-      <div id="client-team-label" style="font-weight: bold; color: #fff; margin-bottom: 8px;"></div>
-      <p style="font-size: 0.85rem; color: var(--text-muted);">
-        🔒 Dispositivo vinculado a este equipo.<br>Esperando a que el Presentador inicie la actividad...
-      </p>
+  <!-- Interfaz de la Ruleta -->
+  <div class="panel" id="box-game" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span id="lbl-grupo" style="color:var(--gold); font-weight:700; font-size:0.85rem;"></span>
+      <span id="lbl-balas" style="color:var(--red); font-weight:700; font-size:0.85rem;">Balas: 1/6</span>
     </div>
-    <button class="btn-secondary" onclick="abandonarEquipo()" style="margin-top: 14px;">
-      🚪 Salir / Cambiar de Equipo
-    </button>
+
+    <!-- Tambor giratorio -->
+    <div class="cylinder-wrap" id="tambor">
+      <div class="cylinder-center"></div>
+      <div class="chamber c1" id="slot-0">1</div>
+      <div class="chamber c2" id="slot-1">2</div>
+      <div class="chamber c3" id="slot-2">3</div>
+      <div class="chamber c4" id="slot-3">4</div>
+      <div class="chamber c5" id="slot-4">5</div>
+      <div class="chamber c6" id="slot-5">6</div>
+    </div>
+
+    <!-- Caso en disputa -->
+    <div class="case-box">
+      <strong style="color:var(--gold); display:block; margin-bottom:4px;" id="case-title">RONDA 1</strong>
+      <p id="case-desc"></p>
+    </div>
+
+    <!-- Acciones -->
+    <div style="display:flex; gap:10px;" id="actions-panel">
+      <button class="btn-action btn-tolerate" onclick="tomarDecision('tolerar')">
+        <span>🤫 DEJAR PASAR</span>
+        <small style="font-size:0.7rem; font-weight:normal; opacity:0.85;">(Añades 1 bala y jalas gatillo)</small>
+      </button>
+      <button class="btn-action btn-limit" onclick="tomarDecision('limite')">
+        <span>🛑 PONER LÍMITE</span>
+        <small style="font-size:0.7rem; font-weight:normal; opacity:0.85;">(Quitas 1 bala y aseguras)</small>
+      </button>
+    </div>
+
+    <div class="feedback" id="feedback-box"></div>
+    <button class="btn-main" id="btn-next" style="display:none;" onclick="siguienteRonda()">Siguiente Situación ➔</button>
   </div>
-
-  <!-- JUEGO CLIENTE -->
-  <div class="panel" id="box-team-game" style="display:none;">
-    <h2 id="client-header-title" style="color:var(--accent-gold); font-size:1.15rem; font-weight: 800;"></h2>
-
-    <div id="client-role-card" class="role-card"></div>
-
-    <div class="dilema-box">
-      <div class="tag" id="client-case-tag">CASO 1 DE 3</div>
-      <h3 id="client-case-title" style="color:var(--accent-gold); font-size:1.05rem; margin-bottom:6px;"></h3>
-      <p id="client-case-desc" style="font-size:0.92rem; line-height:1.55; color:#fff;"></p>
-    </div>
-
-    <div style="margin-top: 14px; text-align: left;" id="client-voting-wrapper">
-      <h3 style="font-size: 0.9rem; color: #fff; font-weight: 700;" id="client-vote-title">Votación Exprés:</h3>
-      <div id="client-vote-buttons"></div>
-    </div>
-
-    <div id="client-vote-feedback"></div>
-  </div>
-
-  <script src="js/components/audioFX.js"></script>
-  <script src="js/components/qr.js"></script>
 
   <script>
-    const INFILTRADOS = ["3", "6"];
+    // Sintetizador de Sonidos Web Audio API
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      playSpin() {
+        this.init();
+        if (!this.ctx) return;
+        for (let i = 0; i < 6; i++) {
+          setTimeout(() => {
+            try {
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(800 + i * 50, this.ctx.currentTime);
+              gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start();
+              osc.stop(this.ctx.currentTime + 0.04);
+            } catch (e) {}
+          }, i * 70);
+        }
+      }
+      playBang() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const bufferSize = this.ctx.sampleRate * 0.4;
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
-    let myDeviceId = localStorage.getItem('revolver_device_id');
-    if (!myDeviceId) {
-      myDeviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('revolver_device_id', myDeviceId);
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(1000, now);
+          filter.frequency.exponentialRampToValueAtTime(80, now + 0.35);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(now);
+          noise.stop(now + 0.4);
+
+          const osc = this.ctx.createOscillator();
+          const oscGain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+          oscGain.gain.setValueAtTime(0.9, now);
+          oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.connect(oscGain);
+          oscGain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } catch (e) {}
+      }
+      playClick() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.06);
+        } catch (e) {}
+      }
+      playChime() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          [523.25, 659.25, 783.99].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + i * 0.08);
+            gain.gain.setValueAtTime(0.2, now + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + i * 0.08);
+            osc.stop(now + i * 0.08 + 0.3);
+          });
+        } catch (e) {}
+      }
     }
+    const audio = new SoundFX();
 
-    let myTeamId = localStorage.getItem('revolver_team_id') || null;
-    let myVocero = localStorage.getItem('revolver_vocero') || '';
-    let isAdmin = false;
-    let lastTurnTeamId = null;
-
-    let serverState = {
-      phase: 'lobby',
-      currentCaseIndex: 0,
-      joinedTeams: {},
-      votes: {},
-      revealDone: false,
-      casos: []
-    };
-
-    const casosFijos = [
+    const situaciones = [
       {
-        titulo: "Caso 1: Apariencias y Redes",
-        desc: "Una pareja finge amor idílico en redes pero oculta maltrato e infidelidad. El entorno pide no hacer escándalo. ¿Confrontar de frente o guardar silencio?",
-        pistaImpostor: "💡 Argumenten que lo que ocurre en la pareja es privado y que denunciar públicamente o hacer escándalo arruina la estabilidad familiar."
+        titulo: "Ronda 1: La Cuenta Falsa",
+        desc: "Descubres que tu pareja tiene una cuenta secundaria de redes donde le tira los perros a terceros. Te dice que 'es solo recocha y que no seas paranoica'."
       },
       {
-        titulo: "Caso 2: Lujos y Falsa Reparación",
-        desc: "Tras una agresión física, el agresor regaló joyas caras y teléfonos para 'comprar' el perdón. ¿Aceptar lujos equivale a saldar el maltrato?",
-        pistaImpostor: "💡 Sostengan que los regalos costosos demuestran arrepentimiento real y la intención sincera del agresor de reparar las cosas."
+        titulo: "Ronda 2: El 'Accidente' en el Carro",
+        desc: "En una discusión acalorada saliendo de una fiesta, arranca el carro de forma violenta y te golpea la puerta dejándote morados. Al día siguiente jura que 'el pie se le resbaló'."
       },
       {
-        titulo: "Caso 3: La Amenaza Velada (El Revólver)",
-        desc: "Consigues un arma/prueba decisiva. ¿Es mejor la venganza pública inmediata o la amenaza en silencio para lograr disuasión constante?",
-        pistaImpostor: "💡 Defiendan que mantener la amenaza guardada sin usarla genera una 'tregua en paz' disuasiva y prudente que evita tragedias."
+        titulo: "Ronda 3: El Regalo de Soberbia",
+        desc: "Tras insultarte frente a tus amigos, llega a tu casa con una cadena de oro y entradas para un concierto costoso esperando que actúes como si nada pasó."
+      },
+      {
+        titulo: "Ronda 4: La Amenaza de Culpa",
+        desc: "Te dice: 'Si me dejas me voy a matar y le voy a decir a tu familia que tú me arruinaste la vida'."
+      },
+      {
+        titulo: "Ronda 5: El Aislamiento Sutil",
+        desc: "Empieza a criticar a todos tus amigos diciendo que 'te tienen envidia' y te pide no volver a salir con ellos sin su compañía."
       }
     ];
 
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('role') === 'student') {
-      setTimeout(() => entrarComoEquipo(), 100);
+    let rondaActual = 0;
+    let balasEnTambor = 1; // Arranca con 1 bala
+    let angulo = 0;
+
+    function entrarJuego() {
+      audio.playClick();
+      const g = document.getElementById('sel-grupo').options[document.getElementById('sel-grupo').selectedIndex].text;
+      document.getElementById('box-login').style.display = 'none';
+      document.getElementById('box-game').style.display = 'block';
+      document.getElementById('lbl-grupo').innerText = g.toUpperCase();
+      actualizarTambor();
+      mostrarRonda();
     }
 
-    let timeOffset = 0;
-
-    async function syncVercelState() {
-      try {
-        const res = await fetch('/api/state');
-        if (res.ok) {
-          const data = await res.json();
-          serverState = data;
-          if (data.serverTime) {
-            timeOffset = data.serverTime - Date.now();
-          }
-          updateUI();
-          updateTimersDisplay();
-        }
-      } catch (e) {
-        console.warn("Syncing state with Vercel:", e);
-      }
-    }
-
-    setInterval(syncVercelState, 1000);
-    setInterval(updateTimersDisplay, 500);
-
-    function updateTimersDisplay() {
-      const nowServer = Date.now() + timeOffset;
-
-      // Único Contador Oficial: Turno de Habla (60s por Grupo)
-      if (serverState.turnEndsAt) {
-        const turnMs = Math.max(0, serverState.turnEndsAt - nowServer);
-        const turnSec = Math.ceil(turnMs / 1000);
-        const text = turnSec > 0 ? `⏱️ ${turnSec}s` : `⏱️ ¡TIEMPO!`;
-        const adminEl = document.getElementById('admin-turn-countdown');
-        const studentEl = document.getElementById('student-turn-countdown');
-        if (adminEl) adminEl.textContent = text;
-        if (studentEl) studentEl.textContent = text;
-      }
-    }
-
-    async function resetTurnTimer() {
-      try {
-        await fetch('/api/turn/reset-timer', { method: 'POST' });
-        syncVercelState();
-      } catch (e) {}
-    }
-
-    async function nextTurnServer() {
-      try {
-        await fetch('/api/turn/next', { method: 'POST' });
-        syncVercelState();
-      } catch (e) {
-        console.warn("Error cediendo turno:", e);
-      }
-    }
-
-    function copiarEnlaceVercel() {
-      const studentUrl = window.location.origin + '?role=student';
-      navigator.clipboard.writeText(studentUrl);
-      alert('¡Enlace de estudiantes copiado al portapapeles!\n' + studentUrl);
-    }
-
-    function volverASeleccion() {
-      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-      document.getElementById('box-role-select').style.display = 'block';
-    }
-
-    function entrarComoAdmin() {
-      isAdmin = true;
-      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-      document.getElementById('box-admin-panel').style.display = 'block';
-      syncVercelState();
-    }
-
-    function abandonarEquipo() {
-      myTeamId = null;
-      myVocero = '';
-      localStorage.removeItem('revolver_team_id');
-      localStorage.removeItem('revolver_vocero');
-      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-      document.getElementById('box-team-login').style.display = 'block';
-      updateUI();
-    }
-
-    function entrarComoEquipo() {
-      isAdmin = false;
-      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-
-      if (myTeamId && serverState.joinedTeams[myTeamId] && serverState.joinedTeams[myTeamId].deviceId === myDeviceId) {
-        updateUI();
-      } else {
-        myTeamId = null;
-        myVocero = '';
-        localStorage.removeItem('revolver_team_id');
-        localStorage.removeItem('revolver_vocero');
-        document.getElementById('box-team-login').style.display = 'block';
-      }
-    }
-
-    async function joinTeamServer() {
-      const teamId = document.getElementById('sel-team-id').value;
-      const voceroInput = document.getElementById('input-vocero-name');
-      const vocero = voceroInput ? voceroInput.value.trim() : '';
-      const errorBox = document.getElementById('join-error-box');
-
-      if (!vocero) {
-        errorBox.style.display = 'block';
-        errorBox.textContent = 'Por favor ingresa el nombre del Vocero.';
+    function mostrarRonda() {
+      if (rondaActual >= situaciones.length) {
+        audio.playChime();
+        document.getElementById('case-title').innerText = "SOBREVIVISTE A LA RULETA";
+        document.getElementById('case-desc').innerHTML = `
+          Demostraron que en una relación abusiva, tolerar banderas rojas es jugar a la ruleta rusa. Como en 'El revólver', poner un límite contundente es lo único que desarma el peligro.
+          <div class="closing-reflection">
+            <strong style="color:var(--gold); display:block; margin-bottom:6px;">📖 CIERRE REFLEXIVO (MARVEL MORENO):</strong>
+            "En el cuento de Marvel Moreno, Ana María estuvo jugando a la ruleta rusa cada vez que toleraba los maltratos de José Caicedo para cuidar las apariencias sociales, hasta que el carro casi la mata en el garaje. Solo cuando consiguió el revólver y puso un límite irreversible, logró vaciar el tambor y obligar al agresor a vivir con miedo durante treinta años."
+          </div>
+        `;
+        document.getElementById('actions-panel').style.display = 'none';
+        document.getElementById('feedback-box').style.display = 'none';
+        document.getElementById('btn-next').style.display = 'none';
         return;
       }
+      const s = situaciones[rondaActual];
+      document.getElementById('case-title').innerText = s.titulo;
+      document.getElementById('case-desc').innerText = s.desc;
+      document.getElementById('feedback-box').style.display = 'none';
+      document.getElementById('btn-next').style.display = 'none';
+      document.getElementById('actions-panel').style.display = 'flex';
+    }
 
-      try {
-        const res = await fetch('/api/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ teamId, vocero, deviceId: myDeviceId })
+    function actualizarTambor() {
+      // Limpiar clases
+      for (let i = 0; i < 6; i++) {
+        document.getElementById(`slot-${i}`).className = "chamber " + `c${i+1}`;
+      }
+      // Colocar balas visuales
+      for (let i = 0; i < balasEnTambor; i++) {
+        document.getElementById(`slot-${i}`).classList.add('has-bullet');
+      }
+      document.getElementById('lbl-balas').innerText = `Balas: ${balasEnTambor}/6`;
+    }
+
+    function girarTambor(callback) {
+      audio.playSpin();
+      angulo += 360 + Math.floor(Math.random() * 6) * 60;
+      document.getElementById('tambor').style.transform = `rotate(${angulo}deg)`;
+      setTimeout(callback, 650);
+    }
+
+    function tomarDecision(tipo) {
+      document.getElementById('actions-panel').style.display = 'none';
+      const fb = document.getElementById('feedback-box');
+      fb.style.display = 'block';
+      document.getElementById('btn-next').style.display = 'block';
+
+      if (tipo === 'tolerar') {
+        // Toleraron: se suma una bala y se jala gatillo
+        balasEnTambor = Math.min(6, balasEnTambor + 1);
+        actualizarTambor();
+
+        girarTambor(() => {
+          // Probabilidad de disparo según balas cargadas
+          const disparo = Math.random() < (balasEnTambor / 6);
+          if (disparo) {
+            audio.playBang();
+            if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+            const f = document.getElementById('flash-screen');
+            f.classList.add('active');
+            setTimeout(() => f.classList.remove('active'), 120);
+
+            fb.style.background = '#381216';
+            fb.style.border = '1px solid var(--red)';
+            fb.style.color = '#ffccd5';
+            fb.innerHTML = `💥 <b>¡BANG! EL DISPARO SE ACTIVÓ</b><br>
+            Tolerar las agresiones para 'evitar peleas' llenó el tambor. El abuso escaló a una agresión irreversible. ¡Game Over para la sumisión!`;
+          } else {
+            audio.playClick();
+            fb.style.background = '#2b2310';
+            fb.style.border = '1px solid var(--gold)';
+            fb.style.color = '#ffe082';
+            fb.innerHTML = `⚠️ <b>CLIC... TE SALVASTE POR PURA SUERTE</b><br>
+            El arma no disparó esta vez, pero dejaste pasar el abuso y ahora el tambor tiene ${balasEnTambor} balas. En la próxima ronda el peligro es casi seguro.`;
+          }
         });
 
-        const data = await res.json();
+      } else {
+        // Pusieron límite firme
+        balasEnTambor = Math.max(1, balasEnTambor - 1);
+        actualizarTambor();
 
-        if (res.status === 409) {
-          errorBox.style.display = 'block';
-          errorBox.textContent = data.error || 'Este equipo ya fue tomado por otro dispositivo.';
-          return;
-        }
-
-        if (!res.ok) {
-          errorBox.style.display = 'block';
-          errorBox.textContent = data.error || 'Error al unirse al equipo.';
-          return;
-        }
-
-        errorBox.style.display = 'none';
-        myTeamId = teamId;
-        myVocero = vocero;
-        localStorage.setItem('revolver_team_id', teamId);
-        localStorage.setItem('revolver_vocero', vocero);
-
-        syncVercelState();
-      } catch (e) {
-        errorBox.style.display = 'block';
-        errorBox.textContent = 'Error de conexión con el servidor.';
-      }
-    }
-
-    async function sendVoteServer(targetId) {
-      if (!myTeamId || serverState.revealDone) return;
-
-      try {
-        await fetch('/api/vote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ teamId: myTeamId, targetId, deviceId: myDeviceId })
+        girarTambor(() => {
+          audio.playChime();
+          fb.style.background = '#0e2b24';
+          fb.style.border = '1px solid var(--green)';
+          fb.style.color = '#c7f9cc';
+          fb.innerHTML = `🛑 <b>LÍMITE ASEGURADO (Estrategia de Ana María)</b><br>
+          Frenaron la manipulación en seco. No aceptaron chantajes ni regalos de soborno. Vaciaron una bala del tambor y desarmaron el poder del agresor sin disparar.`;
         });
-        syncVercelState();
-      } catch (e) {
-        console.warn("Error enviando voto:", e);
       }
     }
 
-    async function adminStartGame() {
-      await fetch('/api/admin/start', { method: 'POST' });
-      syncVercelState();
+    function siguienteRonda() {
+      audio.playClick();
+      rondaActual++;
+      mostrarRonda();
     }
-
-    async function adminQuickAdvance() {
-      await fetch('/api/admin/quick-advance', { method: 'POST' });
-      syncVercelState();
-    }
-
-    async function adminSelectCaseIndex(idx) {
-      const diff = idx - serverState.currentCaseIndex;
-      if (diff > 0) {
-        for (let i = 0; i < diff; i++) await fetch('/api/admin/next', { method: 'POST' });
-      } else if (diff < 0) {
-        for (let i = 0; i < Math.abs(diff); i++) await fetch('/api/admin/prev', { method: 'POST' });
-      }
-      syncVercelState();
-    }
-
-    async function adminResetLobby() {
-      if (confirm("¿Seguro que deseas reiniciar el juego y liberar todos los equipos?")) {
-        await fetch('/api/admin/reset', { method: 'POST' });
-        localStorage.removeItem('revolver_team_id');
-        localStorage.removeItem('revolver_vocero');
-        myTeamId = null;
-        myVocero = '';
-        syncVercelState();
-      }
-    }
-
-    function updateUI() {
-      const listToUse = (serverState.casos && serverState.casos.length > 0) ? serverState.casos : casosFijos;
-
-      // ACTUALIZAR ESTADO DE BLOQUEO DE EQUIPOS EN EL DROPDOWN SELECT DEL ESTUDIANTE
-      const selectEl = document.getElementById('sel-team-id');
-      if (selectEl && serverState.joinedTeams) {
-        for (let i = 1; i <= 6; i++) {
-          const option = selectEl.querySelector(`option[value="${i}"]`);
-          const teamInfo = serverState.joinedTeams[String(i)];
-          if (option) {
-            if (teamInfo && teamInfo.deviceId !== myDeviceId) {
-              option.disabled = true;
-              option.textContent = `Equipo ${i} (🔒 OCUPADO por ${teamInfo.vocero})`;
-            } else {
-              option.disabled = false;
-              option.textContent = `Equipo ${i} ${teamInfo && teamInfo.deviceId === myDeviceId ? '(TU DISPOSITIVO)' : '(DISPONIBLE)'}`;
-            }
-          }
-        }
-      }
-
-      // --- VISTA ADMIN ---
-      if (isAdmin) {
-        if (serverState.phase === 'lobby') {
-          document.getElementById('admin-phase-lobby').style.display = 'block';
-          document.getElementById('admin-phase-game').style.display = 'none';
-
-          const qrBox = document.getElementById('admin-qr-container');
-          const urlText = document.getElementById('admin-url-text');
-          const joinUrl = window.location.origin + '?role=student';
-
-          if (qrBox && window.QRComponent) {
-            qrBox.innerHTML = QRComponent.renderSVG(joinUrl, 220);
-          }
-          if (urlText) urlText.textContent = joinUrl;
-
-          const grid = document.getElementById('admin-lobby-grid');
-          let joinedCount = 0;
-          let gridHTML = '';
-
-          for (let i = 1; i <= 6; i++) {
-            const team = serverState.joinedTeams[String(i)];
-            if (team) {
-              joinedCount++;
-              gridHTML += `<div class="team-badge-lobby connected"><strong>Equipo ${i}</strong><br><span style="font-size:0.75rem;">Vocero: ${team.vocero}</span></div>`;
-            } else {
-              gridHTML += `<div class="team-badge-lobby" style="color:var(--text-muted);">Equipo ${i}<br><span style="font-size:0.75rem;">Disponible</span></div>`;
-            }
-          }
-          grid.innerHTML = gridHTML;
-
-          const btnStart = document.getElementById('btn-admin-start');
-          btnStart.textContent = `🚀 INICIAR ACTIVIDAD EXPRESS (${joinedCount}/6 EQUIPOS)`;
-          btnStart.disabled = joinedCount === 0;
-
-        } else {
-          document.getElementById('admin-phase-lobby').style.display = 'none';
-          document.getElementById('admin-phase-game').style.display = 'block';
-
-          for (let i = 0; i < 3; i++) {
-            const btn = document.getElementById(`btn-case-tab-${i}`);
-            if (btn) {
-              btn.className = (i === serverState.currentCaseIndex) ? 'case-pill-btn active-case' : 'case-pill-btn';
-            }
-          }
-
-          const currentIdx = Math.min(serverState.currentCaseIndex, 2);
-          const caso = listToUse[currentIdx] || casosFijos[currentIdx];
-
-          document.getElementById('admin-case-tag').innerText = `CASO ${currentIdx + 1} DE 3`;
-          document.getElementById('admin-case-title').innerText = caso.titulo;
-          document.getElementById('admin-case-desc').innerText = caso.desc;
-
-          const activeTurnTeam = serverState.turnTeamId || "1";
-          const activeTeamObj = serverState.joinedTeams ? serverState.joinedTeams[activeTurnTeam] : null;
-          const turnStatusEl = document.getElementById('admin-turn-status');
-          if (turnStatusEl) {
-            turnStatusEl.innerHTML = `📢 Turno actual: <strong>Equipo ${activeTurnTeam}</strong> ${activeTeamObj ? `(Vocero: ${activeTeamObj.vocero})` : '(Sin vocero)'}`;
-          }
-
-          if (lastTurnTeamId !== activeTurnTeam) {
-            lastTurnTeamId = activeTurnTeam;
-            if (window.audioController) window.audioController.playClick(750, 0.08);
-          }
-
-          const resistenciaTeams = ["1", "2", "4", "5"];
-          let countVotes = 0;
-          resistenciaTeams.forEach(tid => {
-            if (serverState.votes[tid]) countVotes++;
-          });
-
-          const votesCountEl = document.getElementById('admin-votes-count');
-          if (votesCountEl) {
-            let realTimeStatusHTML = `
-              <div style="font-weight:700; color:var(--accent-gold); font-size:0.9rem; margin-bottom:4px;">
-                🗳️ VOTACIÓN EN TIEMPO REAL (${countVotes}/4):
-              </div>
-              <div style="font-size:0.82rem; color:var(--text-muted); display:grid; grid-template-columns:1fr 1fr; gap:4px;">
-            `;
-            resistenciaTeams.forEach(tid => {
-              const hasVoted = !!serverState.votes[tid];
-              realTimeStatusHTML += `<div>• Equipo ${tid}: ${hasVoted ? '✅ <strong>Votó</strong> 🗳️' : '⏳ <em>Pensando...</em>'}</div>`;
-            });
-            realTimeStatusHTML += `</div>`;
-            votesCountEl.innerHTML = realTimeStatusHTML;
-          }
-
-          const btnExpress = document.getElementById('btn-admin-express');
-          const revealPanel = document.getElementById('admin-reveal-panel');
-
-          if (!serverState.revealDone) {
-            btnExpress.textContent = `⚡ REVELAR RESULTADOS DEL CASO ${currentIdx + 1}`;
-            revealPanel.innerHTML = '';
-          } else {
-            if (currentIdx < 2) {
-              btnExpress.textContent = `⚡ PASAR AL CASO ${currentIdx + 2} ▶`;
-
-              let revealHTML = `
-                <div style="background:rgba(255,183,3,0.12); border:2px solid var(--accent-gold); padding:14px; border-radius:12px; color:#fff; text-align:left;">
-                  <strong style="color:var(--accent-gold); font-size:1.05rem;">📊 VOTOS EMITIDOS EN EL CASO ${currentIdx + 1}:</strong><br>
-                  <span style="font-size:0.8rem; color:var(--text-muted);">🔒 Las identidades de los Infiltrados permanecen secretas hasta el final del Caso 3.</span><br><br>
-                  <strong>ACUSACIONES DE LA RESISTENCIA:</strong><br>
-              `;
-
-              resistenciaTeams.forEach(tid => {
-                const vTarget = serverState.votes[tid];
-                if (vTarget) {
-                  revealHTML += `<div>• Equipo ${tid} acusó al <strong>Equipo ${vTarget}</strong> 🔍</div>`;
-                } else {
-                  revealHTML += `<div>• Equipo ${tid}: <em>Sin voto</em></div>`;
-                }
-              });
-
-              revealHTML += `</div>`;
-              revealPanel.innerHTML = revealHTML;
-            } else {
-              btnExpress.textContent = `🏆 ACTIVIDAD CONCLUIDA (REINICIAR)`;
-
-              // CALCULAR GANADOR TIPO AMONG US
-              let totalAccurate = 0;
-              let totalPossible = 0;
-
-              if (serverState.allVotes && Array.isArray(serverState.allVotes)) {
-                serverState.allVotes.forEach(caseVotes => {
-                  resistenciaTeams.forEach(tid => {
-                    const v = caseVotes[tid];
-                    if (v) {
-                      totalPossible++;
-                      if (INFILTRADOS.includes(v)) totalAccurate++;
-                    }
-                  });
-                });
-              } else {
-                resistenciaTeams.forEach(tid => {
-                  const v = serverState.votes[tid];
-                  if (v) {
-                    totalPossible++;
-                    if (INFILTRADOS.includes(v)) totalAccurate++;
-                  }
-                });
-              }
-
-              const victoriaResistencia = totalAccurate >= 2;
-
-              let revealHTML = '';
-              if (victoriaResistencia) {
-                revealHTML = `
-                  <div style="background: rgba(6,214,160,0.18); border: 2.5px solid var(--accent-green); padding: 18px; border-radius: 16px; color: #fff; text-align: center; box-shadow: 0 0 25px rgba(6,214,160,0.3);">
-                    <div style="font-size: 2.2rem; margin-bottom: 4px;">🎉 🏆 🚀</div>
-                    <h2 style="color: var(--accent-green); font-size: 1.35rem; font-weight: 900; text-transform: uppercase;">
-                      ¡VICTORIA DE LA RESISTENCIA!
-                    </h2>
-                    <p style="font-size: 0.88rem; color: #c7f9cc; margin-top: 4px;">
-                      La Resistencia logró desmascarar a los infiltrados del salón.
-                    </p>
-
-                    <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 14px; margin-top: 14px; text-align: left;">
-                      <strong style="color: var(--accent-gold);">🚨 INFILTRADOS EN EL AULA:</strong> Equipos 3 y 6.<br>
-                      <strong>🎯 ACIERTOS TOTALES EN VOTACIONES:</strong> ${totalAccurate} Aciertos de ${totalPossible} votos.<br><br>
-                      <div style="font-size:0.83rem; color:var(--text-muted);">
-                        ${resistenciaTeams.map(tid => {
-                          const vTarget = serverState.votes[tid];
-                          const isAcc = vTarget && INFILTRADOS.includes(vTarget);
-                          return `• Equipo ${tid} acusó al <strong>Equipo ${vTarget || 'Sin voto'}</strong> ${isAcc ? '🎯 (¡Desmascaró!)' : '❌ (Erró)'}`;
-                        }).join('<br>')}
-                      </div>
-                    </div>
-                  </div>
-                `;
-              } else {
-                revealHTML = `
-                  <div style="background: rgba(239,35,60,0.2); border: 2.5px solid var(--accent-red); padding: 18px; border-radius: 16px; color: #fff; text-align: center; box-shadow: 0 0 25px rgba(239,35,60,0.4);">
-                    <div style="font-size: 2.2rem; margin-bottom: 4px;">😈 🤫 🎭</div>
-                    <h2 style="color: var(--accent-red); font-size: 1.35rem; font-weight: 900; text-transform: uppercase;">
-                      ¡VICTORIA DE LOS INFILTRADOS!
-                    </h2>
-                    <p style="font-size: 0.88rem; color: #ffccd5; margin-top: 4px;">
-                      Los Cómplices (Equipos 3 y 6) lograron manipular el debate y engañar al salón sin ser descubiertos.
-                    </p>
-
-                    <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 14px; margin-top: 14px; text-align: left;">
-                      <strong style="color: var(--accent-gold);">🚨 INFILTRADOS ENCUBIERTOS:</strong> Equipos 3 y 6.<br>
-                      <strong>🎯 ACIERTOS TOTALES DE LA RESISTENCIA:</strong> ${totalAccurate} Aciertos de ${totalPossible} votos.<br><br>
-                      <div style="font-size:0.83rem; color:#ffccd5;">
-                        ${resistenciaTeams.map(tid => {
-                          const vTarget = serverState.votes[tid];
-                          const isAcc = vTarget && INFILTRADOS.includes(vTarget);
-                          return `• Equipo ${tid} acusó al <strong>Equipo ${vTarget || 'Sin voto'}</strong> ${isAcc ? '🎯 (¡Desmascaró!)' : '❌ (Engañado)'}`;
-                        }).join('<br>')}
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }
-
-              revealPanel.innerHTML = revealHTML;
-            }
-          }
-        }
-      }
-
-      // --- VISTA ESTUDIANTE ---
-      if (!isAdmin && myTeamId) {
-        // DETECTAR SI EL SERVIDOR REINICIÓ EL LOBBY O LIBERÓ ESTE EQUIPO
-        const teamInfo = serverState.joinedTeams ? serverState.joinedTeams[myTeamId] : null;
-        if (serverState.phase === 'lobby' && (!teamInfo || teamInfo.deviceId !== myDeviceId)) {
-          myTeamId = null;
-          myVocero = '';
-          localStorage.removeItem('revolver_team_id');
-          localStorage.removeItem('revolver_vocero');
-          document.getElementById('box-team-waiting').style.display = 'none';
-          document.getElementById('box-team-game').style.display = 'none';
-          document.getElementById('box-team-login').style.display = 'block';
-          return;
-        }
-
-        document.getElementById('box-role-select').style.display = 'none';
-        document.getElementById('box-team-login').style.display = 'none';
-
-        if (serverState.phase === 'lobby') {
-          document.getElementById('box-team-waiting').style.display = 'block';
-          document.getElementById('box-team-game').style.display = 'none';
-          document.getElementById('client-team-label').innerText = `EQUIPO ${myTeamId} (Vocero: ${myVocero})`;
-        } else {
-          document.getElementById('box-team-waiting').style.display = 'none';
-          document.getElementById('box-team-game').style.display = 'block';
-
-          document.getElementById('client-header-title').innerText = `EQUIPO ${myTeamId} • VOCERO: ${myVocero.toUpperCase()}`;
-
-          // BANNER DE TURNO DE HABLA EN EL CLIENTE
-          const activeTurnTeam = serverState.turnTeamId || "1";
-          const isMyTurn = myTeamId === activeTurnTeam;
-          const activeTeamObj = serverState.joinedTeams ? serverState.joinedTeams[activeTurnTeam] : null;
-          const voceroName = activeTeamObj ? activeTeamObj.vocero : `Equipo ${activeTurnTeam}`;
-
-          let turnBannerHTML = '';
-          if (isMyTurn) {
-            turnBannerHTML = `
-              <div style="background: rgba(6,214,160,0.18); border: 2px solid var(--accent-green); padding: 14px; border-radius: 12px; margin-bottom: 12px; text-align: left;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-weight:800; color:var(--accent-green); font-size:0.95rem;">
-                    🎤 ¡ES SU TURNO DE HABLAR ANTE LA CLASE!
-                  </span>
-                  <span id="student-turn-countdown" style="font-weight:900; background:var(--accent-green); color:#000; padding:4px 10px; border-radius:8px;">
-                    ⏱️ 60s
-                  </span>
-                </div>
-                <p style="font-size:0.83rem; color:#c7f9cc; margin-top:6px;">
-                  Tienen 1 minuto para dar su argumento oral. Al terminar, presionen para ceder el turno.
-                </p>
-                <button class="btn-express" onclick="nextTurnServer()" style="margin-top:10px; padding:10px; font-size:0.82rem;">
-                  👉 Ceder Turno al Siguiente Grupo
-                </button>
-              </div>
-            `;
-          } else {
-            turnBannerHTML = `
-              <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 12px; border-radius: 12px; margin-bottom: 12px; text-align: left;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:0.88rem; color:var(--text-muted);">
-                    👂 Hablando en clase: <strong style="color:#fff;">Equipo ${activeTurnTeam}</strong> <span style="font-size:0.78rem;">(Vocero: ${voceroName})</span>
-                  </span>
-                  <span id="student-turn-countdown" style="font-weight:800; color:var(--accent-gold); font-size:0.85rem;">
-                    ⏱️ 60s
-                  </span>
-                </div>
-              </div>
-            `;
-          }
-
-          let turnBannerEl = document.getElementById('client-turn-banner');
-          if (!turnBannerEl) {
-            turnBannerEl = document.createElement('div');
-            turnBannerEl.id = 'client-turn-banner';
-            const roleCard = document.getElementById('client-role-card');
-            if (roleCard && roleCard.parentNode) {
-              roleCard.parentNode.insertBefore(turnBannerEl, roleCard);
-            }
-          }
-          if (turnBannerEl) turnBannerEl.innerHTML = turnBannerHTML;
-
-          if (lastTurnTeamId !== activeTurnTeam) {
-            lastTurnTeamId = activeTurnTeam;
-            if (window.audioController) window.audioController.playClick(750, 0.08);
-          }
-
-          const roleCard = document.getElementById('client-role-card');
-          const isImpostor = INFILTRADOS.includes(myTeamId);
-
-          if (isImpostor) {
-            const complice = myTeamId === "3" ? "Equipo 6" : "Equipo 3";
-            roleCard.className = 'role-card impostor';
-            roleCard.innerHTML = `<strong>🤫 ERES UN INFILTRADO (Cómplice del Agresor):</strong><br>
-            Defiende sutilmente al agresor en el debate sin revelar tu identidad.<br>👉 Tu cómplice en la clase es el <strong>${complice}</strong>.`;
-          } else {
-            roleCard.className = 'role-card aliado';
-            roleCard.innerHTML = `<strong>🛡️ ERES DE LA RESISTENCIA (Cero Tolerancia):</strong><br>
-            Defiende la autonomía. Hay 2 equipos infiltrados encubriendo al agresor.`;
-          }
-
-          const currentIdx = Math.min(serverState.currentCaseIndex, 2);
-          const caso = listToUse[currentIdx] || casosFijos[currentIdx];
-
-          const clientTag = document.getElementById('client-case-tag');
-          if (clientTag) clientTag.innerText = `CASO ${currentIdx + 1} DE 3`;
-
-          const clientTitle = document.getElementById('client-case-title');
-          if (clientTitle) clientTitle.innerText = caso.titulo || `Caso ${currentIdx + 1}`;
-
-          const clientDesc = document.getElementById('client-case-desc');
-          if (clientDesc) clientDesc.innerText = caso.desc || '';
-
-          const voteWrapper = document.getElementById('client-vote-buttons');
-          const feedbackBox = document.getElementById('client-vote-feedback');
-
-          if (isImpostor) {
-            voteWrapper.innerHTML = `
-              <div style="background:rgba(239,35,60,0.14); border:1.5px dashed var(--accent-red); padding:16px; border-radius:12px; color:#ffccd5; text-align:left;">
-                <strong style="color:var(--accent-gold); font-size:0.95rem;">💡 PISTA SECRETA DE DEBATE (CASO ${currentIdx + 1}):</strong>
-                <p style="margin-top:6px; font-size:0.88rem; line-height:1.4; color:#fff;">${caso.pistaImpostor || ''}</p>
-                <hr style="border-color:rgba(239,35,60,0.3); margin:10px 0;">
-                <div style="font-size:0.82rem; color:#ffccd5;">
-                  🎭 <strong>¡ACTÚEN EN SU GRUPO!</strong> Como infiltrados <strong>no pueden votar</strong> para no delatarse. Finjan en su grupo que están analizando la pantalla para despistar a los demás.
-                </div>
-              </div>
-            `;
-            feedbackBox.innerHTML = '';
-          } else {
-            let btnHTML = '';
-            const myVote = serverState.votes[myTeamId];
-
-            for (let i = 1; i <= 6; i++) {
-              if (String(i) !== myTeamId) {
-                const isSelected = myVote === String(i);
-                btnHTML += `
-                  <button class="btn-vote ${isSelected ? 'selected' : ''}" onclick="sendVoteServer('${i}')" ${serverState.revealDone ? 'disabled' : ''}>
-                    <span>Acusar al Equipo ${i}</span> <span>${isSelected ? '✅ Votado' : '🔍'}</span>
-                  </button>
-                `;
-              }
-            }
-            voteWrapper.innerHTML = btnHTML;
-
-            if (myVote && !serverState.revealDone) {
-              feedbackBox.innerHTML = `
-                <div class="waiting-box" style="margin-top:14px;">
-                  <div class="spin-pulse">🗳️</div>
-                  <div style="font-weight:bold; color:var(--accent-gold);">Voto Registrado para Equipo ${myVote}</div>
-                  <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">
-                    Esperando a que el Admin revele los resultados en el proyector...
-                  </p>
-                </div>
-              `;
-            } else if (myVote && serverState.revealDone) {
-              if (currentIdx < 2) {
-                feedbackBox.innerHTML = `
-                  <div class="waiting-box" style="background:rgba(255,183,3,0.12); border:1.5px solid var(--accent-gold); color:var(--accent-gold); margin-top:14px;">
-                    🔍 <strong>Voto para Equipo ${myVote} registrado</strong><br>
-                    <span style="font-size:0.85rem; color:#fff;">Resultados mostrados en la pantalla central. ¡Los Infiltrados permanecen ocultos hasta el Caso 3!</span>
-                  </div>
-                `;
-              } else {
-                let totalAccurate = 0;
-                let totalPossible = 0;
-                if (serverState.allVotes && Array.isArray(serverState.allVotes)) {
-                  serverState.allVotes.forEach(caseVotes => {
-                    resistenciaTeams.forEach(tid => {
-                      const v = caseVotes[tid];
-                      if (v) {
-                        totalPossible++;
-                        if (INFILTRADOS.includes(v)) totalAccurate++;
-                      }
-                    });
-                  });
-                } else {
-                  resistenciaTeams.forEach(tid => {
-                    const v = serverState.votes[tid];
-                    if (v) {
-                      totalPossible++;
-                      if (INFILTRADOS.includes(v)) totalAccurate++;
-                    }
-                  });
-                }
-                const victoriaResistencia = totalAccurate >= 2;
-
-                if (victoriaResistencia) {
-                  feedbackBox.innerHTML = `
-                    <div class="waiting-box" style="background:rgba(6,214,160,0.18); border:2px solid var(--accent-green); color:var(--accent-green); margin-top:14px;">
-                      🏆 <strong>¡VICTORIA DE LA RESISTENCIA!</strong><br>
-                      <span style="font-size:0.85rem; color:#fff;">La Resistencia logró descubrir a los Infiltrados (Equipos 3 y 6). ¡Excelente trabajo!</span>
-                    </div>
-                  `;
-                } else {
-                  feedbackBox.innerHTML = `
-                    <div class="waiting-box" style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); color:#ffccd5; margin-top:14px;">
-                      😈 <strong>¡VICTORIA DE LOS INFILTRADOS!</strong><br>
-                      <span style="font-size:0.85rem; color:#fff;">Los Infiltrados (Equipos 3 y 6) lograron salirse con la suya y encubrir al agresor.</span>
-                    </div>
-                  `;
-                }
-              }
-            } else {
-              feedbackBox.innerHTML = '';
-            }
-          }
-        }
-      }
-    }
-
-    syncVercelState();
   </script>
 </body>
 </html>
