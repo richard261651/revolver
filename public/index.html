@@ -962,9 +962,58 @@
       }
     }
 
+    const SYNC_CLOUD_ID = 'ff808181a09d98f701a0a6b51bb0141c';
+    const SYNC_CLOUD_URL = `https://api.restful-api.dev/objects/${SYNC_CLOUD_ID}`;
+
+    function compactEncodeClient(fullTeamsState, resetCount) {
+      const compactTeams = {};
+      Object.keys(fullTeamsState).forEach(id => {
+        const t = fullTeamsState[id];
+        compactTeams[id] = [
+          t.score || 0,
+          t.currentCase || 1,
+          t.status || 'En Espera',
+          t.occupied ? 1 : 0,
+          t.bullets !== undefined ? t.bullets : 1,
+          t.hearts !== undefined ? t.hearts : 1,
+          t.occupiedBy || ''
+        ];
+      });
+      return {
+        r: resetCount || lastResetCounter,
+        u: Date.now(),
+        t: compactTeams
+      };
+    }
+
+    function compactDecodeClient(compactState) {
+      if (!compactState || !compactState.t) return null;
+      const teams = {};
+      Object.keys(compactState.t).forEach(id => {
+        const arr = compactState.t[id];
+        teams[id] = {
+          id: String(id),
+          name: `Equipo ${id}`,
+          score: arr[0] || 0,
+          currentCase: arr[1] || 1,
+          status: arr[2] || 'En Espera',
+          occupied: Boolean(arr[3]),
+          bullets: arr[4] !== undefined ? arr[4] : 1,
+          hearts: arr[5] !== undefined ? arr[5] : 1,
+          occupiedBy: arr[6] || null,
+          updatedAt: compactState.u || Date.now()
+        };
+      });
+      return {
+        resetCounter: compactState.r || 0,
+        teams: teams,
+        updatedAt: compactState.u || Date.now()
+      };
+    }
+
     let lastResetCounter = parseInt(localStorage.getItem('revolver_last_reset') || '0', 10);
 
-    // Publicar actualización en tiempo real a la red mediante backend y ntfy.sh
+    // Publicar actualización en tiempo real a la red mediante backend y direct cloud PUT
     async function publishRealtimeUpdate(payload) {
       if (payload && payload.teamState) {
         payload.teamState.updatedAt = Date.now();
@@ -982,11 +1031,15 @@
       } catch (e) {}
 
       try {
-        fetch(NTFY_URL, {
-          method: 'POST',
-          body: bodyStr,
+        const compact = compactEncodeClient(liveTeamsState, lastResetCounter);
+        fetch(SYNC_CLOUD_URL, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(1000)
+          body: JSON.stringify({
+            name: 'revolver_v3',
+            data: { raw: JSON.stringify(compact) }
+          }),
+          signal: AbortSignal.timeout(2000)
         }).catch(() => {});
       } catch (e) {}
     }
@@ -1013,89 +1066,77 @@
       }
     }
 
-    // Escuchar cambios en vivo instantáneos mediante SSE (Server-Sent Events)
-    function initRealtimeSSE() {
-      try {
-        const sse = new EventSource(`${NTFY_URL}/sse`);
-        sse.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            if (msg && msg.message) {
-              const data = JSON.parse(msg.message);
-              procesarEventoRealtime(data);
-            }
-          } catch (e) {}
-        };
-      } catch (e) {}
-    }
-
-    // Polling en vivo constante contra backend (/api/state) y ntfy.sh
+    // Polling en vivo constante contra backend (/api/state) y respaldo directo cloud DB
     async function syncStateWithServer() {
+      let statePayload = null;
+
       try {
         const resState = await fetch('/api/state', { signal: AbortSignal.timeout(2500) });
         if (resState.ok) {
-          const data = await resState.json();
-          
-          if (data.resetCounter !== undefined && data.resetCounter > lastResetCounter) {
-            lastResetCounter = data.resetCounter;
-            localStorage.setItem('revolver_last_reset', String(lastResetCounter));
-            
-            liveTeamsState = defaultTeams();
-            saveLocalTeamsState();
-            renderLiveLeaderboardTable();
-
-            const gameView = document.getElementById('box-game-view');
-            if (gameView && gameView.style.display !== 'none' && equipoActualId) {
-              detenerTimer();
-              equipoActualId = null;
-              gameView.style.display = 'none';
-              document.getElementById('box-team-login').style.display = 'block';
-              renderTeamSelectOptions();
-              alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
-            }
-          } else if (data.teams) {
-            let updatedAny = false;
-            Object.keys(data.teams).forEach(k => {
-              const sTeam = data.teams[k];
-              const lTeam = liveTeamsState[k];
-              if (sTeam) {
-                if (!lTeam || 
-                    sTeam.occupied !== lTeam.occupied || 
-                    sTeam.status !== lTeam.status || 
-                    sTeam.score !== lTeam.score || 
-                    (sTeam.updatedAt && sTeam.updatedAt > (lTeam.updatedAt || 0))) {
-                  liveTeamsState[k] = sTeam;
-                  updatedAny = true;
-                }
-              }
-            });
-            if (updatedAny) {
-              saveLocalTeamsState();
-              renderLiveLeaderboardTable();
-            }
+          const contentType = resState.headers.get('content-type') || '';
+          if (contentType.includes('json')) {
+            statePayload = await resState.json();
           }
         }
       } catch (e) {}
 
-      try {
-        fetch(`${NTFY_URL}/json?poll=1&since=1h`, { signal: AbortSignal.timeout(1200) })
-          .then(res => res.ok ? res.text() : '')
-          .then(text => {
-            if (!text) return;
-            text.trim().split('\n').forEach(line => {
-              try {
-                const msg = JSON.parse(line);
-                if (msg && msg.message) {
-                  const data = JSON.parse(msg.message);
-                  procesarEventoRealtime(data);
-                }
-              } catch (e) {}
-            });
-          }).catch(() => {});
-      } catch (e) {}
+      if (!statePayload || !statePayload.teams) {
+        try {
+          const resCloud = await fetch(SYNC_CLOUD_URL, { signal: AbortSignal.timeout(2500) });
+          if (resCloud.ok) {
+            const remote = await resCloud.json();
+            if (remote && remote.data && remote.data.raw) {
+              const compactObj = JSON.parse(remote.data.raw);
+              statePayload = compactDecodeClient(compactObj);
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (statePayload) {
+        if (statePayload.resetCounter !== undefined && statePayload.resetCounter > lastResetCounter) {
+          lastResetCounter = statePayload.resetCounter;
+          localStorage.setItem('revolver_last_reset', String(lastResetCounter));
+          
+          liveTeamsState = defaultTeams();
+          saveLocalTeamsState();
+          renderLiveLeaderboardTable();
+
+          const gameView = document.getElementById('box-game-view');
+          if (gameView && gameView.style.display !== 'none' && equipoActualId) {
+            detenerTimer();
+            equipoActualId = null;
+            gameView.style.display = 'none';
+            document.getElementById('box-team-login').style.display = 'block';
+            renderTeamSelectOptions();
+            alert("El docente ha reiniciado la actividad. Por favor selecciona tu equipo para comenzar de nuevo.");
+          }
+        } else if (statePayload.teams) {
+          let updatedAny = false;
+          Object.keys(statePayload.teams).forEach(k => {
+            const sTeam = statePayload.teams[k];
+            const lTeam = liveTeamsState[k];
+            if (sTeam) {
+              if (!lTeam || 
+                  sTeam.occupied !== lTeam.occupied || 
+                  sTeam.status !== lTeam.status || 
+                  sTeam.score !== lTeam.score || 
+                  sTeam.bullets !== lTeam.bullets ||
+                  sTeam.hearts !== lTeam.hearts ||
+                  (sTeam.updatedAt && sTeam.updatedAt > (lTeam.updatedAt || 0))) {
+                liveTeamsState[k] = sTeam;
+                updatedAny = true;
+              }
+            }
+          });
+          if (updatedAny) {
+            saveLocalTeamsState();
+            renderLiveLeaderboardTable();
+          }
+        }
+      }
     }
 
-    initRealtimeSSE();
     setInterval(syncStateWithServer, 800);
 
     function renderLiveLeaderboardTable() {
@@ -1163,12 +1204,27 @@
 
     async function adminResetAll() {
       if (confirm("¿Reiniciar la tabla de posiciones y restablecer los 6 equipos a 1 vida inicial?")) {
+        lastResetCounter++;
+        localStorage.setItem('revolver_last_reset', String(lastResetCounter));
+
         liveTeamsState = defaultTeams();
         saveLocalTeamsState();
         renderLiveLeaderboardTable();
 
         try {
           await fetch('/api/admin/reset', { method: 'POST' });
+        } catch (e) {}
+
+        try {
+          const compact = compactEncodeClient(defaultTeams(), lastResetCounter);
+          await fetch(SYNC_CLOUD_URL, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: 'revolver_v3',
+              data: { raw: JSON.stringify(compact) }
+            })
+          });
         } catch (e) {}
 
         publishRealtimeUpdate({ type: 'RESET_ALL' });
