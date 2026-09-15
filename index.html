@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Revólver: Modo Kahoot Express</title>
+  <title>El Revólver: Modo Kahoot Express (Equipos Bloqueados)</title>
   
   <meta name="theme-color" content="#0d0e12">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,16 +15,15 @@
 
   <style>
     :root {
-      --bg: #0d0e12;
-      --card: #161822;
-      --card-hover: #1f2233;
-      --accent-red: #ef233c;
-      --accent-green: #06d6a0;
-      --accent-gold: #ffb703;
-      --accent-purple: #7209b7;
-      --text: #edf2f4;
-      --text-muted: #8d99ae;
-      --border: #2b2d42;
+      --bg: #090a10;
+      --card: rgba(18, 20, 32, 0.85);
+      --accent-red: #ff2a54;
+      --accent-green: #00f5a0;
+      --accent-gold: #ffc700;
+      --accent-purple: #7b2cbf;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.1);
     }
 
     * {
@@ -36,9 +35,9 @@
     }
 
     body {
-      background: radial-gradient(circle at top, #240046 0%, var(--bg) 85%);
+      background: radial-gradient(circle at 50% 0%, #200839 0%, var(--bg) 75%);
       color: var(--text);
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -48,104 +47,118 @@
     }
 
     header {
-      margin-top: 6px;
-      margin-bottom: 10px;
+      margin-top: 8px;
+      margin-bottom: 12px;
     }
 
     h1 {
-      font-size: 1.5rem;
+      font-size: 1.45rem;
       font-weight: 900;
-      letter-spacing: 1.5px;
+      letter-spacing: 2px;
       text-transform: uppercase;
       color: #fff;
-      text-shadow: 0 0 15px rgba(114, 9, 183, 0.6);
+      text-shadow: 0 0 20px rgba(123, 44, 191, 0.5);
     }
 
     h1 span {
       color: var(--accent-gold);
       display: block;
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      margin-top: 2px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      margin-top: 4px;
     }
 
     .panel {
       width: 100%;
-      max-width: 500px;
+      max-width: 480px;
       background: var(--card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 12px 35px rgba(0,0,0,0.8);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       margin-top: 8px;
-      animation: fadeIn 0.3s ease-out;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     input, select, button {
       width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 0.95rem;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 0.92rem;
       font-family: inherit;
       margin-top: 10px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     input, select {
-      background: #1f2233;
-      border: 1px solid #3d405b;
+      background: rgba(15, 17, 26, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
+    }
+
+    option:disabled {
+      color: var(--accent-red);
+      background: #12131c;
     }
 
     input:focus, select:focus {
       outline: none;
       border-color: var(--accent-gold);
+      box-shadow: 0 0 12px rgba(255, 199, 0, 0.2);
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 800;
+      border: none;
+      letter-spacing: 0.5px;
+    }
+
+    button:active {
+      transform: scale(0.98);
     }
 
     .btn-main {
-      background: linear-gradient(135deg, var(--accent-purple) 0%, #3a0ca3 100%);
+      background: linear-gradient(135deg, var(--accent-purple) 0%, #480ca8 100%);
       color: #fff;
-      border: none;
-      font-weight: 800;
-      cursor: pointer;
       text-transform: uppercase;
-      letter-spacing: 1.2px;
-      box-shadow: 0 4px 15px rgba(114, 9, 183, 0.4);
+      box-shadow: 0 6px 20px rgba(123, 44, 191, 0.4);
     }
 
     .btn-gold {
-      background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+      background: linear-gradient(135deg, #ffc700 0%, #ff9100 100%);
       color: #000;
-      border: none;
-      font-weight: 900;
-      cursor: pointer;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      box-shadow: 0 6px 20px rgba(255, 199, 0, 0.35);
     }
 
     .btn-express {
-      background: linear-gradient(135deg, #06d6a0 0%, #1b9aaa 100%);
-      color: #000;
-      border: none;
-      font-weight: 900;
-      cursor: pointer;
+      background: linear-gradient(135deg, #00f5a0 0%, #00b4d8 100%);
+      color: #05141d;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: 0 4px 15px rgba(6, 214, 160, 0.4);
+      box-shadow: 0 6px 20px rgba(0, 245, 160, 0.35);
     }
 
     .btn-secondary {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
       color: var(--text-muted);
       font-size: 0.82rem;
+      font-weight: 600;
       margin-top: 12px;
-      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
     }
 
     .teams-grid {
@@ -156,96 +169,103 @@
     }
 
     .team-badge-lobby {
-      background: rgba(255,255,255,0.04);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
       padding: 12px;
       text-align: center;
       transition: all 0.3s ease;
     }
 
     .team-badge-lobby.connected {
-      background: rgba(6, 214, 160, 0.15);
+      background: rgba(0, 245, 160, 0.12);
       border: 1.5px solid var(--accent-green);
       color: var(--accent-green);
-      box-shadow: 0 0 12px rgba(6, 214, 160, 0.3);
+      box-shadow: 0 0 15px rgba(0, 245, 160, 0.2);
     }
 
     .role-card {
-      padding: 14px;
-      border-radius: 12px;
-      margin: 12px 0;
-      line-height: 1.45;
+      padding: 16px;
+      border-radius: 14px;
+      margin: 14px 0;
+      line-height: 1.5;
       text-align: left;
       font-size: 0.88rem;
     }
 
     .impostor {
-      background: rgba(239, 35, 60, 0.14);
-      border: 2px solid var(--accent-red);
+      background: rgba(255, 42, 84, 0.12);
+      border: 1.5px solid var(--accent-red);
       color: #ffccd5;
     }
 
     .aliado {
-      background: rgba(6, 214, 160, 0.14);
-      border: 2px solid var(--accent-green);
+      background: rgba(0, 245, 160, 0.12);
+      border: 1.5px solid var(--accent-green);
       color: #c7f9cc;
     }
 
     .dilema-box {
-      background: #10111a;
+      background: rgba(10, 11, 18, 0.8);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 12px;
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 14px;
       text-align: left;
       font-size: 0.92rem;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .tag {
       display: inline-block;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.7rem;
       font-weight: 800;
-      margin-bottom: 6px;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
       background: var(--accent-gold);
       color: #000;
+      text-transform: uppercase;
     }
 
     .btn-vote {
-      background: #1e202f;
-      border: 1px solid #33364d;
-      color: #eee;
+      background: rgba(30, 34, 50, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
       text-align: left;
       margin-top: 8px;
-      padding: 12px 14px;
-      cursor: pointer;
+      padding: 14px 16px;
       font-size: 0.88rem;
-      border-radius: 10px;
+      border-radius: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
+    .btn-vote:hover {
+      border-color: var(--accent-gold);
+      background: rgba(255, 199, 0, 0.08);
+    }
+
     .btn-vote.selected {
       border-color: var(--accent-gold);
-      background: rgba(255, 183, 3, 0.15);
+      background: rgba(255, 199, 0, 0.16);
+      box-shadow: 0 0 15px rgba(255, 199, 0, 0.2);
     }
 
     .waiting-box {
-      padding: 24px 16px;
-      background: rgba(255,183,3,0.08);
+      padding: 24px 18px;
+      background: rgba(255, 199, 0, 0.06);
       border: 1.5px dashed var(--accent-gold);
-      border-radius: 14px;
+      border-radius: 16px;
       color: var(--accent-gold);
       margin-top: 14px;
     }
 
     .spin-pulse {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
+      font-size: 2rem;
+      margin-bottom: 8px;
       display: inline-block;
       animation: pulse 1.5s infinite ease-in-out;
     }
@@ -257,9 +277,9 @@
     }
 
     .error-msg-box {
-      background: rgba(239, 35, 60, 0.2);
+      background: rgba(255, 42, 84, 0.18);
       border: 1.5px solid var(--accent-red);
-      color: #ff85a1;
+      color: #ffccd5;
       padding: 12px;
       border-radius: 10px;
       font-size: 0.88rem;
@@ -268,27 +288,27 @@
     }
 
     .qr-hero-card {
-      background: rgba(255, 183, 3, 0.08);
-      border: 2px solid var(--accent-gold);
-      border-radius: 16px;
-      padding: 18px;
+      background: rgba(255, 199, 0, 0.05);
+      border: 1.5px solid var(--accent-gold);
+      border-radius: 18px;
+      padding: 20px;
       margin-top: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-shadow: 0 0 25px rgba(255, 183, 3, 0.25);
+      box-shadow: 0 0 30px rgba(255, 199, 0, 0.15);
     }
 
     .btn-copy {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--accent-gold);
       color: var(--accent-gold);
-      padding: 10px 16px;
+      padding: 10px 18px;
       font-size: 0.85rem;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      margin-top: 10px;
-      font-weight: bold;
+      margin-top: 12px;
+      font-weight: 700;
     }
 
     .cases-bar-wrapper {
@@ -299,11 +319,11 @@
     }
 
     .case-pill-btn {
-      padding: 10px 16px;
-      border-radius: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
       font-size: 0.85rem;
-      font-weight: bold;
-      background: #1a1c2b;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
       color: var(--text-muted);
       cursor: pointer;
@@ -315,13 +335,14 @@
       background: var(--accent-gold);
       color: #000;
       border-color: var(--accent-gold);
+      box-shadow: 0 0 12px rgba(255, 199, 0, 0.3);
     }
 
     .timer-badge {
       font-size: 1.6rem;
       font-weight: 900;
       color: var(--accent-gold);
-      font-family: monospace;
+      font-family: 'Inter', monospace;
       letter-spacing: 2px;
       margin-bottom: 4px;
     }
@@ -439,20 +460,20 @@
   <!-- VISTA ESTUDIANTE -->
   <div class="panel" id="box-team-login" style="display:none;">
     <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-purple); letter-spacing:1px; margin-bottom:4px;">
-      📱 REGISTRO DE EQUIPO (1 DISPOSITIVO)
+      📱 REGISTRO DE EQUIPO (1 DISPOSITIVO POR GRUPO)
     </div>
 
     <div style="font-size: 0.85rem; color: var(--text-muted); margin-top:6px;">
-      Selecciona tu grupo. Cada equipo solo puede registrar 1 celular:
+      Selecciona tu grupo. Los equipos ocupados por otro teléfono están bloqueados:
     </div>
 
     <select id="sel-team-id">
-      <option value="1">Equipo 1</option>
-      <option value="2">Equipo 2</option>
-      <option value="3">Equipo 3</option>
-      <option value="4">Equipo 4</option>
-      <option value="5">Equipo 5</option>
-      <option value="6">Equipo 6</option>
+      <option value="1">Equipo 1 (DISPONIBLE)</option>
+      <option value="2">Equipo 2 (DISPONIBLE)</option>
+      <option value="3">Equipo 3 (DISPONIBLE)</option>
+      <option value="4">Equipo 4 (DISPONIBLE)</option>
+      <option value="5">Equipo 5 (DISPONIBLE)</option>
+      <option value="6">Equipo 6 (DISPONIBLE)</option>
     </select>
 
     <input type="text" id="input-vocero-name" placeholder="Nombre del Vocero Oficial" required autocomplete="off">
@@ -473,7 +494,7 @@
       <h3 style="font-size: 1.1rem; margin-bottom: 6px;">¡Registrado con Éxito!</h3>
       <div id="client-team-label" style="font-weight: bold; color: #fff; margin-bottom: 8px;"></div>
       <p style="font-size: 0.85rem; color: var(--text-muted);">
-        🔒 Dispositivo vinculado.<br>Esperando a que el Presentador inicie la actividad...
+        🔒 Dispositivo vinculado a este equipo.<br>Esperando a que el Presentador inicie la actividad...
       </p>
     </div>
     <button class="btn-secondary" onclick="abandonarEquipo()" style="margin-top: 14px;">
@@ -500,7 +521,7 @@
     <div id="client-vote-feedback"></div>
   </div>
 
-  <script src="public/js/components/qr.js"></script>
+  <script src="js/components/qr.js"></script>
 
   <script>
     const INFILTRADOS = ["3", "6"];
@@ -749,6 +770,24 @@
     function updateUI() {
       const listToUse = (serverState.casos && serverState.casos.length > 0) ? serverState.casos : casosFijos;
 
+      // ACTUALIZAR ESTADO DE BLOQUEO DE EQUIPOS EN EL DROPDOWN SELECT DEL ESTUDIANTE
+      const selectEl = document.getElementById('sel-team-id');
+      if (selectEl && serverState.joinedTeams) {
+        for (let i = 1; i <= 6; i++) {
+          const option = selectEl.querySelector(`option[value="${i}"]`);
+          const teamInfo = serverState.joinedTeams[String(i)];
+          if (option) {
+            if (teamInfo && teamInfo.deviceId !== myDeviceId) {
+              option.disabled = true;
+              option.textContent = `Equipo ${i} (🔒 OCUPADO por ${teamInfo.vocero})`;
+            } else {
+              option.disabled = false;
+              option.textContent = `Equipo ${i} ${teamInfo && teamInfo.deviceId === myDeviceId ? '(TU DISPOSITIVO)' : '(DISPONIBLE)'}`;
+            }
+          }
+        }
+      }
+
       // --- VISTA ADMIN ---
       if (isAdmin) {
         if (serverState.phase === 'lobby') {
@@ -800,6 +839,18 @@
           document.getElementById('admin-case-tag').innerText = `CASO ${currentIdx + 1} DE 3`;
           document.getElementById('admin-case-title').innerText = caso.titulo;
           document.getElementById('admin-case-desc').innerText = caso.desc;
+
+          const activeTurnTeam = serverState.turnTeamId || "1";
+          const activeTeamObj = serverState.joinedTeams ? serverState.joinedTeams[activeTurnTeam] : null;
+          const turnStatusEl = document.getElementById('admin-turn-status');
+          if (turnStatusEl) {
+            turnStatusEl.innerHTML = `📢 Turno actual: <strong>Equipo ${activeTurnTeam}</strong> ${activeTeamObj ? `(Vocero: ${activeTeamObj.vocero})` : '(Sin vocero)'}`;
+          }
+
+          if (lastTurnTeamId !== activeTurnTeam) {
+            lastTurnTeamId = activeTurnTeam;
+            startTurnTimer();
+          }
 
           const resistenciaTeams = ["1", "2", "4", "5"];
           let countVotes = 0;
