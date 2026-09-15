@@ -1109,7 +1109,22 @@
 
     let lastResetCounter = parseInt(localStorage.getItem('revolver_last_reset') || '0', 10);
 
-    // Publicar actualización en tiempo real a la red mediante backend y direct cloud PUT
+    function initRealtimeListener() {
+      try {
+        const eventSource = new EventSource(`${NTFY_URL}/sse`);
+        eventSource.onmessage = (event) => {
+          try {
+            const rawData = JSON.parse(event.data);
+            if (rawData && rawData.message) {
+              const payload = JSON.parse(rawData.message);
+              procesarEventoRealtime(payload);
+            }
+          } catch (e) {}
+        };
+      } catch (e) {}
+    }
+
+    // Publicar actualización en tiempo real a la red mediante SSE instantáneo, backend y cloud DB
     async function publishRealtimeUpdate(payload) {
       if (payload && payload.teamState) {
         payload.teamState.updatedAt = Date.now();
@@ -1118,6 +1133,13 @@
       payload.phase = currentGamePhase;
 
       const bodyStr = JSON.stringify(payload);
+
+      try {
+        fetch(NTFY_URL, {
+          method: 'POST',
+          body: bodyStr
+        }).catch(() => {});
+      } catch (e) {}
 
       try {
         await fetch('/api/team/action', {
@@ -1145,24 +1167,26 @@
       if (!data) return;
       if (data.type === 'START_GAME') {
         currentGamePhase = 'playing';
+        syncStateWithServer();
+      } else if (data.type === 'SHOW_RESULTS') {
+        currentGamePhase = 'results';
+        syncStateWithServer();
       } else if (data.type === 'RESET_ALL') {
         currentGamePhase = 'waiting';
+        equipoActualId = null;
+        nombreEquipo = "";
         liveTeamsState = defaultTeams();
         saveLocalTeamsState();
-        renderLiveLeaderboardTable();
+        syncStateWithServer();
       } else if (data.type === 'TEAM_UPDATE' && data.teamId && data.teamState) {
         const incoming = data.teamState;
-        const current = liveTeamsState[data.teamId];
-
-        if (!current || 
-            current.status === "En Espera" || 
-            incoming.occupied !== current.occupied ||
-            (incoming.updatedAt && incoming.updatedAt >= (current.updatedAt || 0)) ||
-            (incoming.score || 0) >= (current.score || 0)) {
-          liveTeamsState[data.teamId] = incoming;
-          saveLocalTeamsState();
-          renderLiveLeaderboardTable();
-        }
+        liveTeamsState[data.teamId] = {
+          ...(liveTeamsState[data.teamId] || {}),
+          ...incoming
+        };
+        saveLocalTeamsState();
+        updateAdminTeamsStatus();
+        renderLiveLeaderboardTable();
       }
     }
 
@@ -1253,6 +1277,9 @@
           renderLiveLeaderboardTable();
         }
 
+        // Siempre actualizar la lista de equipos en el panel docente
+        updateAdminTeamsStatus();
+
         // TRANSICIONES DE PANTALLA SEGÚN LA FASE GLOBAL ('waiting', 'playing', 'results')
         const roleSelect = document.getElementById('box-role-select');
         const teamLogin = document.getElementById('box-team-login');
@@ -1325,6 +1352,7 @@
     }
 
     setInterval(syncStateWithServer, 800);
+    initRealtimeListener();
 
     function renderFinalResultsView() {
       const podiumContainer = document.getElementById('podium-container');
