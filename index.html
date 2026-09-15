@@ -307,10 +307,12 @@
 
     .badge-status {
       font-size: 0.72rem;
-      padding: 2px 6px;
+      padding: 3px 6px;
       border-radius: 4px;
       font-weight: bold;
       text-transform: uppercase;
+      white-space: nowrap;
+      display: inline-block;
     }
     .badge-firme { background: rgba(6,214,160,0.2); color: var(--green); border: 1px solid var(--green); }
     .badge-bang { background: rgba(255,51,102,0.25); color: var(--red); border: 1px solid var(--red); }
@@ -373,6 +375,88 @@
     @keyframes pulse-arrow {
       0% { transform: translate(-50%, 0); opacity: 0.85; }
       100% { transform: translate(-50%, -4px); opacity: 1; text-shadow: 0 0 14px var(--red); }
+    }
+
+    /* RESPONSIVO PARA TELÉFONOS (MÓVILES) */
+    @media (max-width: 600px) {
+      body { padding: 10px 6px; }
+      h1 { font-size: 1.15rem; letter-spacing: 1px; }
+      h1 span { font-size: 0.68rem; letter-spacing: 1px; }
+
+      .panel {
+        padding: 14px 10px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        max-width: 100%;
+      }
+
+      .leaderboard-table {
+        font-size: 0.72rem;
+      }
+      .leaderboard-table th, .leaderboard-table td {
+        padding: 6px 3px;
+      }
+      .badge-status {
+        font-size: 0.64rem;
+        padding: 2px 5px;
+      }
+      .heart-svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .winner-banner {
+        padding: 8px 10px;
+        margin-bottom: 10px;
+      }
+      .winner-title { font-size: 0.65rem; }
+      .winner-team { font-size: 0.92rem; }
+      .winner-pts { font-size: 0.92rem; }
+
+      .case-box {
+        padding: 10px 12px;
+        font-size: 0.82rem;
+        margin: 10px 0;
+      }
+      .btn-choice {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        gap: 8px;
+      }
+      .choice-badge {
+        font-size: 0.72rem;
+        padding: 2px 6px;
+      }
+      .closing-reflection {
+        padding: 12px;
+        font-size: 0.8rem;
+        margin-top: 10px;
+      }
+
+      .cylinder-wrap {
+        width: 140px;
+        height: 140px;
+      }
+      .cylinder-center {
+        width: 36px;
+        height: 36px;
+      }
+      .chamber {
+        width: 30px;
+        height: 30px;
+        font-size: 0.68rem;
+      }
+      .c1 { top: 6px; left: 53px; }
+      .c2 { top: 30px; right: 8px; }
+      .c3 { bottom: 30px; right: 8px; }
+      .c4 { bottom: 6px; left: 53px; }
+      .c5 { bottom: 30px; left: 8px; }
+      .c6 { top: 30px; left: 8px; }
+
+      .top-arrow-indicator {
+        font-size: 0.65rem;
+        top: -22px;
+      }
     }
   </style>
 </head>
@@ -1002,23 +1086,24 @@
         }
 
         let html = `
-          <table class="leaderboard-table">
-            <thead>
-              <tr>
-                <th>POS</th>
-                <th>EQUIPO</th>
-                <th>AVANCE</th>
-                <th>VIDA (1 MAX)</th>
-                <th>BALAS</th>
-                <th>PUNTOS</th>
-                <th>ESTADO EN VIVO</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div style="width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-top:6px; border-radius:8px;">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>POS</th>
+                  <th>EQUIPO</th>
+                  <th>AVANCE</th>
+                  <th>VIDA</th>
+                  <th>BALAS</th>
+                  <th>PUNTOS</th>
+                  <th>ESTADO</th>
+                </tr>
+              </thead>
+              <tbody>
         `;
 
         sorted.forEach((item, index) => {
-          const posLabel = `${index + 1}º LUGAR`;
+          const posLabel = `${index + 1}º`;
           const heartsSvg = renderHeartsSVG(item.hearts !== undefined ? item.hearts : 1, 1);
           const st = item.status || 'En Espera';
           let badgeClass = 'badge-espera';
@@ -1036,15 +1121,15 @@
               <td><strong>${posLabel}</strong></td>
               <td><strong>${item.name || `Equipo ${item.id}`}</strong></td>
               <td><strong style="color:var(--gold);">${caseLabel}</strong></td>
-              <td><div class="hearts-bar">${heartsSvg}</div></td>
-              <td><strong style="color:var(--red);">BALAS ${item.bullets || 1}/6</strong></td>
+              <td><div class="hearts-bar" style="justify-content:center;">${heartsSvg}</div></td>
+              <td><strong style="color:var(--red);">${item.bullets || 1}/6</strong></td>
               <td><strong style="color:var(--gold);">${item.score || 0} PTS</strong></td>
               <td><span class="badge-status ${badgeClass}">${st}</span></td>
             </tr>
           `;
         });
 
-        html += `</tbody></table>`;
+        html += `</tbody></table></div>`;
         container.innerHTML = html;
       }
 
