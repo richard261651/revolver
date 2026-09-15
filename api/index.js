@@ -1,4 +1,4 @@
-// api/index.js - Vercel Serverless Backend Handler (3 Vidas / Sin Emojis / Ganador por Puntos)
+// api/index.js - Real-time State Sync Serverless Backend
 const express = require('express');
 
 const app = express();
@@ -40,34 +40,16 @@ app.post('/api/admin/reset', (req, res) => {
 });
 
 app.post('/api/team/action', (req, res) => {
-  const { teamId, caseIndex, isCorrect, bulletsAdd, pointsAdd } = req.body;
+  const { teamId, teamState } = req.body;
 
-  if (!teamId || !gameState.teams[teamId]) {
-    return res.status(400).json({ error: 'Equipo no válido' });
+  if (teamId && teamState && gameState.teams[teamId]) {
+    gameState.teams[teamId] = {
+      ...gameState.teams[teamId],
+      ...teamState
+    };
   }
 
-  const team = gameState.teams[teamId];
-  team.currentCase = caseIndex + 1;
-
-  if (isCorrect) {
-    team.bullets = Math.max(1, team.bullets - 1);
-    team.score += pointsAdd || 150;
-    team.status = "LÍMITE FIRME";
-    return res.json({ success: true, team, disparo: false });
-  } else {
-    team.bullets = Math.min(6, team.bullets + (bulletsAdd || 1));
-    const disparo = Math.random() < (team.bullets / 6);
-
-    if (disparo) {
-      team.hearts = Math.max(0, team.hearts - 1);
-      team.status = team.hearts > 0 ? "DISPARO (-1 VIDA)" : "COLAPSO TOTAL";
-    } else {
-      team.score += 40;
-      team.status = "CLIC (SALVADO)";
-    }
-
-    return res.json({ success: true, team, disparo });
-  }
+  return res.json({ success: true, team: gameState.teams[teamId], teams: gameState.teams });
 });
 
 module.exports = app;

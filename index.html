@@ -228,19 +228,19 @@
       color: #fff;
     }
 
-    /* Vidas con Iconos SVG puros sin emojis */
+    /* Vidas con Iconos SVG Vectoriales (Sin Emojis) */
     .hearts-bar {
       display: flex;
       gap: 4px;
       align-items: center;
     }
     .heart-svg {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       transition: transform 0.3s ease;
     }
-    .heart-active { fill: var(--red); }
-    .heart-lost { fill: none; stroke: #555; stroke-width: 2; opacity: 0.4; }
+    .heart-active { fill: var(--red); filter: drop-shadow(0 0 5px var(--red)); }
+    .heart-lost { fill: none; stroke: #444; stroke-width: 2; opacity: 0.3; }
 
     .qr-card {
       background: rgba(255, 183, 3, 0.05);
@@ -263,6 +263,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 0 15px rgba(255, 199, 0, 0.15);
     }
 
     .winner-title {
@@ -274,13 +275,13 @@
     }
 
     .winner-team {
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       font-weight: 900;
       color: #fff;
     }
 
     .winner-pts {
-      font-size: 0.95rem;
+      font-size: 1.05rem;
       font-weight: 900;
       color: var(--green);
     }
@@ -391,7 +392,7 @@
       <span id="lbl-balas" style="color:var(--red); font-weight:700; font-size:0.85rem;">BALAS: 1/6</span>
     </div>
 
-    <!-- Indicador de 3 Vidas (Iconos SVG Vectoriales sin emojis) -->
+    <!-- Indicador de 3 Vidas (Iconos SVG Vectoriales sin Emojis) -->
     <div style="margin-top: 6px; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 12px; border-radius:8px;">
       <span style="font-size:0.75rem; color:#aaa; font-weight:bold;">SALUD RELACIONAL (3 VIDAS):</span>
       <div class="hearts-bar" id="lbl-corazones-svg"></div>
@@ -427,7 +428,7 @@
 
   <!-- TABLA DE POSICIONES Y RESULTADOS EN VIVO PARA TODOS -->
   <div class="panel" id="panel-leaderboard">
-    <!-- BANNER DE GANADOR ACTUAL -->
+    <!-- BANNER DE GANADOR ACTUAL POR PUNTOS -->
     <div class="winner-banner">
       <div>
         <div class="winner-title">LÍDER ACTUAL POR PUNTOS</div>
@@ -444,6 +445,9 @@
   </div>
 
   <script>
+    const NTFY_TOPIC = "revolver_game_classroom_2026";
+    const NTFY_URL = `https://ntfy.sh/${NTFY_TOPIC}`;
+
     // SVG QR Generator Inline
     function generateQRInlineSVG(text, size = 150) {
       const encoded = encodeURIComponent(text);
@@ -712,7 +716,7 @@
     let nombreEquipo = "EQUIPO 1";
     let rondaActual = 0;
     let balasEnTambor = 1;
-    let corazonesRestantes = 3; // EXACTAMENTE 3 VIDAS MAXIMO
+    let corazonesRestantes = 3;
     let puntosEquipo = 0;
     let angulo = 0;
 
@@ -731,11 +735,45 @@
       localStorage.setItem('revolver_teams_live_3v', JSON.stringify(liveTeamsState));
     }
 
+    // Publicar actualización en tiempo real a la red mediante ntfy.sh
+    async function publishRealtimeUpdate(payload) {
+      try {
+        await fetch(NTFY_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+    }
+
+    // Polling en vivo contra ntfy.sh y backend
     async function syncStateWithServer() {
       try {
-        const res = await fetch('/api/state');
+        const res = await fetch(`${NTFY_URL}/json?poll=1&since=30s`);
         if (res.ok) {
-          const data = await res.json();
+          const text = await res.text();
+          const lines = text.trim().split('\n');
+          lines.forEach(line => {
+            try {
+              const msg = JSON.parse(line);
+              if (msg && msg.message) {
+                const data = JSON.parse(msg.message);
+                if (data.type === 'TEAM_UPDATE' && data.teamId && data.teamState) {
+                  liveTeamsState[data.teamId] = data.teamState;
+                  saveLocalTeamsState();
+                } else if (data.type === 'RESET_ALL') {
+                  liveTeamsState = defaultTeams();
+                  saveLocalTeamsState();
+                }
+              }
+            } catch (e) {}
+          });
+        }
+      } catch (e) {}
+
+      try {
+        const resState = await fetch('/api/state');
+        if (resState.ok) {
+          const data = await resState.json();
           if (data.teams) {
             Object.keys(data.teams).forEach(k => {
               if (data.teams[k]) liveTeamsState[k] = data.teams[k];
@@ -744,6 +782,7 @@
           }
         }
       } catch (e) {}
+
       renderLiveLeaderboardTable();
     }
 
@@ -810,9 +849,10 @@
         saveLocalTeamsState();
         renderLiveLeaderboardTable();
 
+        publishRealtimeUpdate({ type: 'RESET_ALL' });
+
         try {
           await fetch('/api/admin/reset', { method: 'POST' });
-          syncStateWithServer();
         } catch (e) {}
       }
     }
@@ -888,7 +928,7 @@
     function mostrarRonda() {
       if (corazonesRestantes <= 0) {
         audio.playBang();
-        liveTeamsState[equipoActualId] = {
+        const teamSnapshot = {
           id: equipoActualId,
           name: nombreEquipo,
           hearts: 0,
@@ -896,8 +936,15 @@
           score: puntosEquipo,
           status: "COLAPSO TOTAL"
         };
+        liveTeamsState[equipoActualId] = teamSnapshot;
         saveLocalTeamsState();
         renderLiveLeaderboardTable();
+
+        publishRealtimeUpdate({
+          type: 'TEAM_UPDATE',
+          teamId: equipoActualId,
+          teamState: teamSnapshot
+        });
 
         document.getElementById('case-title').innerText = "LA RELACIÓN HA COLAPSADO";
         document.getElementById('case-desc').innerHTML = `
@@ -916,7 +963,7 @@
         const bonoFinal = corazonesRestantes * 100;
         puntosEquipo += bonoFinal;
 
-        liveTeamsState[equipoActualId] = {
+        const teamSnapshot = {
           id: equipoActualId,
           name: nombreEquipo,
           hearts: corazonesRestantes,
@@ -924,8 +971,15 @@
           score: puntosEquipo,
           status: "Sobrevivió"
         };
+        liveTeamsState[equipoActualId] = teamSnapshot;
         saveLocalTeamsState();
         renderLiveLeaderboardTable();
+
+        publishRealtimeUpdate({
+          type: 'TEAM_UPDATE',
+          teamId: equipoActualId,
+          teamState: teamSnapshot
+        });
 
         document.getElementById('case-title').innerText = "SOBREVIVISTE A LA RULETA";
         document.getElementById('case-desc').innerHTML = `
@@ -1007,7 +1061,7 @@
             fb.innerHTML = `<b>CLIC... SE SALVARON POR PURA SUERTE (+40 PTS)</b><br>${elegida.explicacion}<br><br><small>El revólver giró pero la recámara estaba vacía. El tambor queda cargado con ${balasEnTambor} balas para la siguiente ronda.</small>`;
           }
 
-          liveTeamsState[equipoActualId] = {
+          const teamSnapshot = {
             id: equipoActualId,
             name: nombreEquipo,
             hearts: corazonesRestantes,
@@ -1015,8 +1069,15 @@
             score: puntosEquipo,
             status: newStatus
           };
+          liveTeamsState[equipoActualId] = teamSnapshot;
           saveLocalTeamsState();
           renderLiveLeaderboardTable();
+
+          publishRealtimeUpdate({
+            type: 'TEAM_UPDATE',
+            teamId: equipoActualId,
+            teamState: teamSnapshot
+          });
 
           try {
             await fetch('/api/team/action', {
@@ -1024,14 +1085,9 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 teamId: equipoActualId,
-                caseIndex: rondaActual,
-                optionIdx: optIdx,
-                isCorrect: false,
-                bulletsAdd: elegida.balasAdd,
-                pointsAdd: 40
+                teamState: teamSnapshot
               })
             });
-            syncStateWithServer();
           } catch (e) {}
         });
 
@@ -1047,7 +1103,7 @@
           fb.style.color = '#c7f9cc';
           fb.innerHTML = `<b>RESPUESTA CORRECTA - LÍMITE FIRME (+150 PTS)</b><br>${elegida.explicacion}<br><br><small>Desarmaron la manipulación en seco, vaciaron 1 bala del tambor y protegieron sus vidas intactas.</small>`;
 
-          liveTeamsState[equipoActualId] = {
+          const teamSnapshot = {
             id: equipoActualId,
             name: nombreEquipo,
             hearts: corazonesRestantes,
@@ -1055,8 +1111,15 @@
             score: puntosEquipo,
             status: "LÍMITE FIRME"
           };
+          liveTeamsState[equipoActualId] = teamSnapshot;
           saveLocalTeamsState();
           renderLiveLeaderboardTable();
+
+          publishRealtimeUpdate({
+            type: 'TEAM_UPDATE',
+            teamId: equipoActualId,
+            teamState: teamSnapshot
+          });
 
           try {
             await fetch('/api/team/action', {
@@ -1064,13 +1127,9 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 teamId: equipoActualId,
-                caseIndex: rondaActual,
-                optionIdx: optIdx,
-                isCorrect: true,
-                pointsAdd: 150
+                teamState: teamSnapshot
               })
             });
-            syncStateWithServer();
           } catch (e) {}
         });
       }
