@@ -1489,7 +1489,9 @@
       const podiumContainer = document.getElementById('podium-container');
       const tableContainer = document.getElementById('final-results-table-container');
 
-      const sorted = Object.keys(liveTeamsState).map(k => ({ id: k, ...liveTeamsState[k] }))
+      const allTeams = Object.keys(liveTeamsState).map(k => ({ id: k, ...liveTeamsState[k] }));
+      const activeTeams = allTeams.filter(t => t.occupied || (t.score && t.score > 0) || (t.status && t.status !== 'En Espera'));
+      const sorted = (activeTeams.length > 0 ? activeTeams : allTeams)
         .sort((a, b) => {
           const aDisqualified = Boolean((a.status || '').match(/DESCALIFICADO|BANG/i));
           const bDisqualified = Boolean((b.status || '').match(/DESCALIFICADO|BANG/i));
@@ -1499,10 +1501,18 @@
 
       if (podiumContainer) {
         let podiumHtml = '';
-        const top3 = [sorted[1], sorted[0], sorted[2]];
-        const heights = ['110px', '145px', '90px'];
-        const colors = ['#c0c0c0', '#ffd700', '#cd7f32'];
-        const places = ['2º PUESTO', '1º LUGAR 🥇', '3º PUESTO'];
+        let top3 = [];
+        if (sorted.length === 1) {
+          top3 = [sorted[0]];
+        } else if (sorted.length === 2) {
+          top3 = [sorted[1], sorted[0]];
+        } else {
+          top3 = [sorted[1], sorted[0], sorted[2]];
+        }
+
+        const heights = sorted.length === 1 ? ['145px'] : (sorted.length === 2 ? ['110px', '145px'] : ['110px', '145px', '90px']);
+        const colors = sorted.length === 1 ? ['#ffd700'] : (sorted.length === 2 ? ['#c0c0c0', '#ffd700'] : ['#c0c0c0', '#ffd700', '#cd7f32']);
+        const places = sorted.length === 1 ? ['1º LUGAR 🥇'] : (sorted.length === 2 ? ['2º PUESTO', '1º LUGAR 🥇'] : ['2º PUESTO', '1º LUGAR 🥇', '3º PUESTO']);
 
         top3.forEach((team, idx) => {
           if (team) {
@@ -1724,7 +1734,6 @@
 
         publishRealtimeUpdate({ type: 'SHOW_RESULTS' });
         mostrarResultadosEnProyector();
-        alert("🏁 ¡ACTIVIDAD FINALIZADA! Se han mostrado los Resultados Finales y el Podio en la pantalla del proyector.");
       }
     }
 
