@@ -316,11 +316,64 @@
     .badge-bang { background: rgba(255,51,102,0.25); color: var(--red); border: 1px solid var(--red); }
     .badge-clic { background: rgba(255,183,3,0.2); color: var(--gold); border: 1px solid var(--gold); }
     .badge-espera { background: rgba(255,255,255,0.06); color: #aaa; border: 1px solid #444; }
+
+    /* Temporizador 30s y barra de progreso */
+    .timer-badge {
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+    .timer-badge.danger {
+      background: rgba(255, 51, 102, 0.25);
+      border-color: var(--red);
+      color: var(--red);
+      animation: pulse-danger 0.8s infinite alternate;
+    }
+    @keyframes pulse-danger {
+      0% { transform: scale(1); box-shadow: 0 0 4px rgba(255,51,102,0.4); }
+      100% { transform: scale(1.08); box-shadow: 0 0 12px rgba(255,51,102,0.8); }
+    }
+
+    .timer-progress-wrap {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      margin: 8px 0 6px 0;
+      overflow: hidden;
+    }
+    .timer-progress-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--green) 0%, var(--gold) 50%, var(--red) 100%);
+      transition: width 1s linear;
+    }
   </style>
 </head>
 <body>
 
   <div id="flash-screen" class="flash"></div>
+
+  <!-- MODAL DE QR GRANDE PARA PROYECTAR EN CLASE -->
+  <div id="modal-qr-large" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(5,5,12,0.96); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(8px);">
+    <div style="background:#15151f; border:2px solid var(--gold); border-radius:20px; padding:28px 20px; max-width:480px; width:92%; text-align:center; box-shadow:0 0 50px rgba(255,183,3,0.35);">
+      <div style="font-size:1.15rem; font-weight:900; color:var(--gold); margin-bottom:14px; letter-spacing:1px; text-transform:uppercase;">
+        ESCANEA CON TU CELULAR PARA INGRESAR
+      </div>
+      <div id="admin-qr-large-container" style="background:#fff; padding:18px; border-radius:16px; display:inline-block; margin-bottom:14px; box-shadow:0 8px 25px rgba(0,0,0,0.5);"></div>
+      <div style="font-size:0.85rem; color:#aaa; margin-bottom:6px;">ENLACE DIRECTO DE PARTICIPANTES:</div>
+      <div style="font-size:0.88rem; color:#fff; word-break:break-all; font-weight:bold; margin-bottom:20px; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; border:1px solid #333;" id="admin-url-large-text"></div>
+      <button class="btn-gold" onclick="cerrarModalQRGrande()" style="padding:14px 28px; font-size:1rem; cursor:pointer; width:auto; display:inline-block;">
+        ✕ CERRAR VISTA GRANDE
+      </button>
+    </div>
+  </div>
 
   <header>
     <h1>RULETA RUSA<span>EL REVÓLVER DE MARVEL MORENO</span></h1>
@@ -332,7 +385,7 @@
       Selecciona tu modo de acceso:
     </p>
 
-    <button class="btn-gold" onclick="entrarComoAdmin()" style="padding: 16px;">
+    <button class="btn-gold" onclick="entrarComoAdmin(true)" style="padding: 16px;">
       PANEL DE ADMIN / PROYECTOR<br>
       <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR y mostrar resultados del grupo ganador en vivo</span>
     </button>
@@ -348,6 +401,10 @@
     <div style="font-size:0.85rem; font-weight:bold; color:var(--gold); letter-spacing:1px; margin-bottom:10px;">
       PANEL DE CONTROL Y PROYECTOR DE CLASE
     </div>
+
+    <button class="btn-gold" onclick="abrirModalQRGrande()" style="margin-bottom: 14px; padding: 14px;">
+      🔍 VER CÓDIGO QR EN GRANDE PARA EL SALÓN
+    </button>
 
     <div class="qr-card">
       <div style="font-size: 0.8rem; font-weight: 800; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px;">
@@ -389,7 +446,10 @@
   <div class="panel" id="box-game-view" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <span id="lbl-grupo" style="color:var(--gold); font-weight:700; font-size:0.85rem;"></span>
-      <span id="lbl-balas" style="color:var(--red); font-weight:700; font-size:0.85rem;">BALAS: 1/6</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="timer-badge" id="timer-box" style="display:none;">⏱️ <span id="timer-seconds">30</span>s</span>
+        <span id="lbl-balas" style="color:var(--red); font-weight:700; font-size:0.85rem;">BALAS: 1/6</span>
+      </div>
     </div>
 
     <!-- Indicador de 3 Vidas (Iconos SVG Vectoriales sin Emojis) -->
@@ -407,6 +467,11 @@
       <div class="chamber c4" id="slot-3">4</div>
       <div class="chamber c5" id="slot-4">5</div>
       <div class="chamber c6" id="slot-5">6</div>
+    </div>
+
+    <!-- Barra de Tiempo Progresiva -->
+    <div class="timer-progress-wrap" id="timer-progress-wrap" style="display:none;">
+      <div class="timer-progress-fill" id="timer-progress-fill"></div>
     </div>
 
     <!-- Caso en disputa -->
@@ -735,20 +800,73 @@
       localStorage.setItem('revolver_teams_live_3v', JSON.stringify(liveTeamsState));
     }
 
-    // Publicar actualización en tiempo real a la red mediante ntfy.sh
+    // Publicar actualización en tiempo real a la red mediante ntfy.sh y backend
     async function publishRealtimeUpdate(payload) {
+      if (payload && payload.teamState) {
+        payload.teamState.updatedAt = Date.now();
+      }
+      payload.timestamp = Date.now();
+
+      const bodyStr = JSON.stringify(payload);
+
       try {
         await fetch(NTFY_URL, {
           method: 'POST',
-          body: JSON.stringify(payload)
+          body: bodyStr,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (e) {}
+
+      try {
+        await fetch('/api/team/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: bodyStr
         });
       } catch (e) {}
     }
 
-    // Polling en vivo contra ntfy.sh y backend
+    function procesarEventoRealtime(data) {
+      if (!data) return;
+      if (data.type === 'TEAM_UPDATE' && data.teamId && data.teamState) {
+        const incoming = data.teamState;
+        const current = liveTeamsState[data.teamId];
+
+        if (!current || 
+            current.status === "En Espera" || 
+            (incoming.updatedAt && incoming.updatedAt >= (current.updatedAt || 0)) ||
+            (incoming.score || 0) >= (current.score || 0)) {
+          liveTeamsState[data.teamId] = incoming;
+          saveLocalTeamsState();
+          renderLiveLeaderboardTable();
+        }
+      } else if (data.type === 'RESET_ALL') {
+        liveTeamsState = defaultTeams();
+        saveLocalTeamsState();
+        renderLiveLeaderboardTable();
+      }
+    }
+
+    // Escuchar cambios en vivo instantáneos mediante SSE (Server-Sent Events)
+    function initRealtimeSSE() {
+      try {
+        const sse = new EventSource(`${NTFY_URL}/sse`);
+        sse.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg && msg.message) {
+              const data = JSON.parse(msg.message);
+              procesarEventoRealtime(data);
+            }
+          } catch (e) {}
+        };
+      } catch (e) {}
+    }
+
+    // Polling en vivo de respaldo contra ntfy.sh y backend
     async function syncStateWithServer() {
       try {
-        const res = await fetch(`${NTFY_URL}/json?poll=1&since=30s`);
+        const res = await fetch(`${NTFY_URL}/json?poll=1&since=5m`);
         if (res.ok) {
           const text = await res.text();
           const lines = text.trim().split('\n');
@@ -757,13 +875,7 @@
               const msg = JSON.parse(line);
               if (msg && msg.message) {
                 const data = JSON.parse(msg.message);
-                if (data.type === 'TEAM_UPDATE' && data.teamId && data.teamState) {
-                  liveTeamsState[data.teamId] = data.teamState;
-                  saveLocalTeamsState();
-                } else if (data.type === 'RESET_ALL') {
-                  liveTeamsState = defaultTeams();
-                  saveLocalTeamsState();
-                }
+                procesarEventoRealtime(data);
               }
             } catch (e) {}
           });
@@ -775,18 +887,28 @@
         if (resState.ok) {
           const data = await resState.json();
           if (data.teams) {
+            let updatedAny = false;
             Object.keys(data.teams).forEach(k => {
-              if (data.teams[k]) liveTeamsState[k] = data.teams[k];
+              const sTeam = data.teams[k];
+              const lTeam = liveTeamsState[k];
+              if (sTeam && sTeam.status !== "En Espera") {
+                if (!lTeam || lTeam.status === "En Espera" || (sTeam.updatedAt && sTeam.updatedAt >= (lTeam.updatedAt || 0))) {
+                  liveTeamsState[k] = sTeam;
+                  updatedAny = true;
+                }
+              }
             });
-            saveLocalTeamsState();
+            if (updatedAny) {
+              saveLocalTeamsState();
+              renderLiveLeaderboardTable();
+            }
           }
         }
       } catch (e) {}
-
-      renderLiveLeaderboardTable();
     }
 
-    setInterval(syncStateWithServer, 800);
+    initRealtimeSSE();
+    setInterval(syncStateWithServer, 1000);
 
     function renderLiveLeaderboardTable() {
       const container = document.getElementById('live-leaderboard-container');
@@ -857,12 +979,40 @@
       }
     }
 
-    function entrarComoAdmin() {
+    function abrirModalQRGrande() {
+      audio.playClick();
+      const joinUrl = `${window.location.origin}${window.location.pathname}?mode=participant`;
+      document.getElementById('admin-qr-large-container').innerHTML = generateQRInlineSVG(joinUrl, 280);
+      document.getElementById('admin-url-large-text').innerText = joinUrl;
+      const modal = document.getElementById('modal-qr-large');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function cerrarModalQRGrande() {
+      audio.playClick();
+      const modal = document.getElementById('modal-qr-large');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function entrarComoAdmin(userClick = false) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isAdmin = urlParams.get('mode') === 'admin' || window.location.hash === '#admin';
+
+      if (!isAdmin && userClick) {
+        const pass = prompt("Acceso restringido: Ingresa la clave de docente (o accede mediante la URL ?mode=admin):");
+        if (pass !== "admin123" && pass !== "admin") {
+          alert("Acceso denegado. Para administrar el juego debes ingresar mediante el enlace especial del docente (?mode=admin).");
+          return;
+        }
+      }
+
       audio.playClick();
       document.getElementById('box-role-select').style.display = 'none';
+      document.getElementById('box-team-login').style.display = 'none';
+      document.getElementById('box-game-view').style.display = 'none';
       document.getElementById('box-admin-view').style.display = 'block';
 
-      const joinUrl = window.location.origin;
+      const joinUrl = `${window.location.origin}${window.location.pathname}?mode=participant`;
       document.getElementById('admin-qr-container').innerHTML = generateQRInlineSVG(joinUrl, 160);
       document.getElementById('admin-url-text').innerText = joinUrl;
 
@@ -876,6 +1026,7 @@
     }
 
     function volverASeleccionRole() {
+      detenerTimer();
       audio.playClick();
       document.getElementById('box-admin-view').style.display = 'none';
       document.getElementById('box-team-login').style.display = 'none';
@@ -883,7 +1034,130 @@
       document.getElementById('box-role-select').style.display = 'block';
     }
 
+    // LÓGICA DE TEMPORIZADOR DE 30 SEGUNDOS
+    const TIEMPO_LIMITE_SECS = 30;
+    let timerInterval = null;
+    let tiempoRestante = TIEMPO_LIMITE_SECS;
+
+    function detenerTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      const tBox = document.getElementById('timer-box');
+      const tWrap = document.getElementById('timer-progress-wrap');
+      if (tBox) tBox.style.display = 'none';
+      if (tWrap) tWrap.style.display = 'none';
+    }
+
+    function iniciarTimer() {
+      detenerTimer();
+      tiempoRestante = TIEMPO_LIMITE_SECS;
+
+      const tBox = document.getElementById('timer-box');
+      const tSecs = document.getElementById('timer-seconds');
+      const tWrap = document.getElementById('timer-progress-wrap');
+      const tFill = document.getElementById('timer-progress-fill');
+
+      if (tBox) {
+        tBox.style.display = 'inline-block';
+        tBox.classList.remove('danger');
+      }
+      if (tSecs) tSecs.innerText = tiempoRestante;
+      if (tWrap) tWrap.style.display = 'block';
+      if (tFill) {
+        tFill.style.width = '100%';
+        tFill.style.transition = 'none';
+        setTimeout(() => { if (tFill) tFill.style.transition = 'width 1s linear'; }, 50);
+      }
+
+      timerInterval = setInterval(() => {
+        tiempoRestante--;
+        if (tSecs) tSecs.innerText = Math.max(0, tiempoRestante);
+        if (tFill) tFill.style.width = `${(Math.max(0, tiempoRestante) / TIEMPO_LIMITE_SECS) * 100}%`;
+
+        if (tiempoRestante <= 10 && tBox) {
+          tBox.classList.add('danger');
+          audio.playClick();
+        }
+
+        if (tiempoRestante <= 0) {
+          detenerTimer();
+          manejadorTiempoAgotado();
+        }
+      }, 1000);
+    }
+
+    async function manejadorTiempoAgotado() {
+      detenerTimer();
+      document.getElementById('actions-panel').style.display = 'none';
+      const fb = document.getElementById('feedback-box');
+      fb.style.display = 'block';
+      document.getElementById('btn-next').style.display = 'block';
+
+      balasEnTambor = Math.min(6, balasEnTambor + 1);
+      actualizarTambor();
+
+      girarTambor(async () => {
+        const disparo = Math.random() < (balasEnTambor / 6);
+        let newStatus = "TIEMPO AGOTADO (CLIC)";
+
+        if (disparo) {
+          audio.playBang();
+          corazonesRestantes = Math.max(0, corazonesRestantes - 1);
+          actualizarCorazonesUI();
+          newStatus = corazonesRestantes > 0 ? "DISPARO (TIEMPO AGOTADO)" : "COLAPSO TOTAL";
+
+          if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+          const f = document.getElementById('flash-screen');
+          f.classList.add('active');
+          setTimeout(() => f.classList.remove('active'), 120);
+
+          fb.style.background = '#381216';
+          fb.style.border = '1px solid var(--red)';
+          fb.style.color = '#ffccd5';
+          fb.innerHTML = `<b>¡TIEMPO AGOTADO (30S)! EL REVÓLVER SE DISPARÓ (PIERDEN 1 VIDA)</b><br>Se agotó el tiempo de 30 segundos sin tomar una decisión. La duda o la indecisión ante la violencia permite que el agresor tome el control y el riesgo se dispare.<br><br><small>Se cargó 1 bala extra, el revólver giró por tiempo agotado y se disparó. Quedan ${corazonesRestantes} vidas de salud relacional.</small>`;
+        } else {
+          audio.playClick();
+          fb.style.background = '#2b2310';
+          fb.style.border = '1px solid var(--gold)';
+          fb.style.color = '#ffe082';
+          fb.innerHTML = `<b>¡TIEMPO AGOTADO (30S)! SE SALVARON POR PURA SUERTE</b><br>Se agotó el tiempo de 30 segundos sin responder. El revólver giró por indecisión pero la recámara actual estaba vacía.<br><br><small>Se cargó 1 bala extra al tambor por no responder a tiempo. El tambor ahora tiene ${balasEnTambor} balas.</small>`;
+        }
+
+        const teamSnapshot = {
+          id: equipoActualId,
+          name: nombreEquipo,
+          hearts: corazonesRestantes,
+          bullets: balasEnTambor,
+          score: puntosEquipo,
+          status: newStatus
+        };
+        liveTeamsState[equipoActualId] = teamSnapshot;
+        saveLocalTeamsState();
+        renderLiveLeaderboardTable();
+
+        publishRealtimeUpdate({
+          type: 'TEAM_UPDATE',
+          teamId: equipoActualId,
+          teamState: teamSnapshot
+        });
+
+        try {
+          await fetch('/api/team/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              teamId: equipoActualId,
+              teamState: teamSnapshot
+            })
+          });
+        } catch (e) {}
+      });
+    }
+
     function confirmarEquipo() {
+      detenerTimer();
       audio.playClick();
       const sel = document.getElementById('sel-grupo');
       equipoActualId = sel.value;
@@ -927,6 +1201,7 @@
 
     function mostrarRonda() {
       if (corazonesRestantes <= 0) {
+        detenerTimer();
         audio.playBang();
         const teamSnapshot = {
           id: equipoActualId,
@@ -959,6 +1234,7 @@
       }
 
       if (rondaActual >= situaciones.length) {
+        detenerTimer();
         audio.playChime();
         const bonoFinal = corazonesRestantes * 100;
         puntosEquipo += bonoFinal;
@@ -1018,9 +1294,12 @@
       document.getElementById('feedback-box').style.display = 'none';
       document.getElementById('btn-next').style.display = 'none';
       document.getElementById('actions-panel').style.display = 'flex';
+
+      iniciarTimer();
     }
 
     async function tomarDecision(optIdx) {
+      detenerTimer();
       document.getElementById('actions-panel').style.display = 'none';
       const fb = document.getElementById('feedback-box');
       fb.style.display = 'block';
@@ -1136,6 +1415,7 @@
     }
 
     function siguienteRonda() {
+      detenerTimer();
       audio.playClick();
       rondaActual++;
       mostrarRonda();
@@ -1143,6 +1423,17 @@
 
     renderLiveLeaderboardTable();
     syncStateWithServer();
+
+    // Control de acceso inicial por parámetros de URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'admin' || window.location.hash === '#admin') {
+      entrarComoAdmin();
+    } else if (urlParams.get('mode') === 'participant' || window.location.hash === '#participante') {
+      entrarComoParticipante();
+    } else {
+      // Si entra por la URL raíz sin parámetros, entra directo como participante para proteger el panel de Admin
+      entrarComoParticipante();
+    }
   </script>
 </body>
 </html>

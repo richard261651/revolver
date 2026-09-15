@@ -45,7 +45,8 @@ app.post('/api/team/action', (req, res) => {
   if (teamId && teamState && gameState.teams[teamId]) {
     gameState.teams[teamId] = {
       ...gameState.teams[teamId],
-      ...teamState
+      ...teamState,
+      updatedAt: teamState.updatedAt || Date.now()
     };
   }
 
