@@ -1,0 +1,17 @@
+{
+  "name": "el-revolver-operacion-amatista",
+  "version": "1.0.0",
+  "description": "Aplicación web en tiempo real para el taller didáctico El Revólver / Operación Amatista",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.1.2"
+  }
+}

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>El Revólver: Despliegue Online Vercel</title>
+  
+  <meta name="theme-color" content="#0d0e12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0d0e12;
+      --card: #161822;
+      --card-hover: #1f2233;
+      --accent-red: #ef233c;
+      --accent-green: #06d6a0;
+      --accent-gold: #ffb703;
+      --accent-purple: #7209b7;
+      --text: #edf2f4;
+      --text-muted: #8d99ae;
+      --border: #2b2d42;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #240046 0%, var(--bg) 85%);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+    }
+
+    header {
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 0 0 15px rgba(114, 9, 183, 0.6);
+    }
+
+    h1 span {
+      color: var(--accent-gold);
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-top: 2px;
+    }
+
+    .panel {
+      width: 100%;
+      max-width: 500px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.8);
+      margin-top: 8px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      margin-top: 10px;
+    }
+
+    input, select {
+      background: #1f2233;
+      border: 1px solid #3d405b;
+      color: #fff;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+    }
+
+    .btn-main {
+      background: linear-gradient(135deg, var(--accent-purple) 0%, #3a0ca3 100%);
+      color: #fff;
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      box-shadow: 0 4px 15px rgba(114, 9, 183, 0.4);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+      color: #000;
+      border: none;
+      font-weight: 900;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+
+    .teams-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .team-badge-lobby {
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .team-badge-lobby.connected {
+      background: rgba(6, 214, 160, 0.15);
+      border: 1.5px solid var(--accent-green);
+      color: var(--accent-green);
+      box-shadow: 0 0 12px rgba(6, 214, 160, 0.3);
+    }
+
+    .role-card {
+      padding: 14px;
+      border-radius: 12px;
+      margin: 12px 0;
+      line-height: 1.45;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    .impostor {
+      background: rgba(239, 35, 60, 0.14);
+      border: 2px solid var(--accent-red);
+      color: #ffccd5;
+    }
+
+    .aliado {
+      background: rgba(6, 214, 160, 0.14);
+      border: 2px solid var(--accent-green);
+      color: #c7f9cc;
+    }
+
+    .dilema-box {
+      background: #10111a;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+      text-align: left;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      background: var(--accent-gold);
+      color: #000;
+    }
+
+    .btn-vote {
+      background: #1e202f;
+      border: 1px solid #33364d;
+      color: #eee;
+      text-align: left;
+      margin-top: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-vote.selected {
+      border-color: var(--accent-gold);
+      background: rgba(255, 183, 3, 0.15);
+    }
+
+    .waiting-box {
+      padding: 24px 16px;
+      background: rgba(255,183,3,0.08);
+      border: 1.5px dashed var(--accent-gold);
+      border-radius: 14px;
+      color: var(--accent-gold);
+      margin-top: 14px;
+    }
+
+    .spin-pulse {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      display: inline-block;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.8; }
+    }
+
+    .error-msg-box {
+      background: rgba(239, 35, 60, 0.2);
+      border: 1.5px solid var(--accent-red);
+      color: #ff85a1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>El Revólver<span>Plataforma Online Vercel</span></h1>
+  </header>
+
+  <!-- SELECCIÓN INICIAL -->
+  <div class="panel" id="box-role-select">
+    <p style="font-size: 0.92rem; color: var(--text-muted); margin-bottom: 6px;">
+      Selecciona tu acceso al sistema:
+    </p>
+
+    <button class="btn-gold" onclick="entrarComoAdmin()" style="padding: 16px;">
+      🖥️ PANEL DE ADMIN / PRESENTADOR<br>
+      <span style="font-size:0.75rem; font-weight:normal;">Proyectar QR, controlar lobby y revelar votos</span>
+    </button>
+
+    <button class="btn-main" onclick="entrarComoEquipo()" style="margin-top: 14px; padding: 16px;">
+      📱 UNIRSE COMO EQUIPO (CELULAR)<br>
+      <span style="font-size:0.75rem; font-weight:normal;">1 solo dispositivo permitido por cada equipo</span>
+    </button>
+  </div>
+
+  <!-- PANEL ADMIN -->
+  <div class="panel" id="box-admin-panel" style="display:none;">
+    <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-gold); letter-spacing:1px; margin-bottom:4px;">
+      👑 PANEL DE CONTROL DE ADMIN
+    </div>
+
+    <!-- ADMIN LOBBY -->
+    <div id="admin-phase-lobby">
+      <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 12px; margin-top: 10px; display:flex; flex-direction:column; align-items:center;">
+        <div id="admin-qr-container" style="margin-bottom:8px;"></div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">ENLACE PÚBLICO PARA LOS EQUIPOS:</div>
+        <div style="font-size: 0.95rem; font-weight: 800; color: var(--accent-gold); margin-top:2px; word-break: break-all;" id="admin-url-text">
+          https://...
+        </div>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 12px;">
+        Escanea el QR o entra al enlace (1 dispositivo por equipo):
+      </p>
+
+      <div class="teams-grid" id="admin-lobby-grid"></div>
+
+      <button class="btn-gold" id="btn-admin-start" onclick="adminStartGame()" style="margin-top: 18px; padding: 16px;" disabled>
+        🚀 INICIAR ACTIVIDAD (0/6 EQUIPOS)
+      </button>
+
+      <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Sala / Limpiar Equipos</button>
+    </div>
+
+    <!-- ADMIN GAME PANEL -->
+    <div id="admin-phase-game" style="display:none;">
+      <div class="dilema-box">
+        <div class="tag" id="admin-case-tag">CASO 1 DE 3</div>
+        <h3 id="admin-case-title" style="color:var(--accent-gold); font-size:1.05rem; margin-bottom:6px;"></h3>
+        <p id="admin-case-desc" style="font-size:0.95rem; line-height:1.5; color:#fff;"></p>
+      </div>
+
+      <div style="margin-top: 14px; background: rgba(255,255,255,0.03); padding: 14px; border-radius: 12px;">
+        <div style="font-size:0.85rem; color:var(--text-muted);">VOTOS RECIBIDOS EN TIEMPO REAL:</div>
+        <div style="font-size:1.35rem; font-weight:800; color:var(--accent-green); margin-top:4px;" id="admin-votes-count">
+          0 / 4 Votos de Resistencia
+        </div>
+      </div>
+
+      <button class="btn-gold" id="btn-admin-reveal" onclick="adminRevealVotes()" style="margin-top: 14px; display:none;">
+        🔍 REVELAR RESULTADOS A TODA LA CLASE
+      </button>
+
+      <div id="admin-reveal-panel" style="margin-top: 14px;"></div>
+
+      <button class="btn-main" id="btn-admin-next" onclick="adminNextCase()" style="margin-top: 14px; display:none;">
+        ⚡ SIGUIENTE CASO DE DEBATE
+      </button>
+
+      <button class="btn-secondary" onclick="adminResetLobby()">🔄 Reiniciar Juego</button>
+    </div>
+  </div>
+
+  <!-- VISTA ESTUDIANTE -->
+  <div class="panel" id="box-team-login" style="display:none;">
+    <div style="font-size:0.8rem; font-weight:bold; color:var(--accent-purple); letter-spacing:1px; margin-bottom:4px;">
+      📱 REGISTRO DE EQUIPO (1 DISPOSITIVO)
+    </div>
+
+    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top:6px;">
+      Selecciona tu número de grupo. Solo se permite 1 celular por equipo:
+    </div>
+
+    <select id="sel-team-id">
+      <option value="1">Equipo 1</option>
+      <option value="2">Equipo 2</option>
+      <option value="3">Equipo 3</option>
+      <option value="4">Equipo 4</option>
+      <option value="5">Equipo 5</option>
+      <option value="6">Equipo 6</option>
+    </select>
+
+    <input type="text" id="input-vocero-name" placeholder="Nombre del Vocero Oficial" required autocomplete="off">
+
+    <div class="error-msg-box" id="join-error-box"></div>
+
+    <button class="btn-main" onclick="joinTeamServer()">
+      🚀 REGISTRAR Y UNIRSE AL LOBBY
+    </button>
+
+    <button class="btn-secondary" onclick="volverASeleccion()">← Volver</button>
+  </div>
+
+  <!-- ESPERA LOBBY CLIENTE -->
+  <div class="panel" id="box-team-waiting" style="display:none;">
+    <div class="waiting-box">
+      <div class="spin-pulse">⏳</div>
+      <h3 style="font-size: 1.1rem; margin-bottom: 6px;">¡Registrado con Éxito!</h3>
+      <div id="client-team-label" style="font-weight: bold; color: #fff; margin-bottom: 8px;"></div>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">
+        🔒 Dispositivo vinculado a este equipo.<br>Esperando a que el Admin inicie la actividad desde la pantalla central...
+      </p>
+    </div>
+  </div>
+
+  <!-- JUEGO CLIENTE -->
+  <div class="panel" id="box-team-game" style="display:none;">
+    <h2 id="client-header-title" style="color:var(--accent-gold); font-size:1.15rem; font-weight: 800;"></h2>
+
+    <div id="client-role-card" class="role-card"></div>
+
+    <div class="dilema-box">
+      <div class="tag" id="client-case-tag">CASO ACTUAL:</div>
+      <p id="client-case-desc"></p>
+    </div>
+
+    <div style="margin-top: 14px; text-align: left;" id="client-voting-wrapper">
+      <h3 style="font-size: 0.9rem; color: #fff; font-weight: 700;" id="client-vote-title">Votación y Acusación:</h3>
+      <div id="client-vote-buttons"></div>
+    </div>
+
+    <div id="client-vote-feedback"></div>
+  </div>
+
+  <script src="js/components/qr.js"></script>
+
+  <script>
+    const INFILTRADOS = ["3", "6"];
+
+    let myDeviceId = localStorage.getItem('revolver_device_id');
+    if (!myDeviceId) {
+      myDeviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('revolver_device_id', myDeviceId);
+    }
+
+    let myTeamId = localStorage.getItem('revolver_team_id') || null;
+    let myVocero = localStorage.getItem('revolver_vocero') || '';
+    let isAdmin = false;
+
+    let serverState = {
+      phase: 'lobby',
+      currentCaseIndex: 0,
+      joinedTeams: {},
+      votes: {},
+      revealDone: false
+    };
+
+    const casos = [
+      {
+        titulo: "Caso 1: La Fachada en Redes",
+        desc: "Una pareja finge amor idílico en redes sociales, pero descubres que hay agresión e infidelidad oculta. Al pedir explicaciones, te exigen guardar silencio por 'el qué dirán'. ¿Confrontar la farsa o mantener las apariencias del círculo?"
+      },
+      {
+        titulo: "Caso 2: Lujos y Falsa Reparación",
+        desc: "Tras un hecho de violencia física, el agresor intenta 'resarcir' el daño regalando artículos de lujo, joyas y pidiendo disculpas. ¿Aceptar la transferencia patrimonial equivale a perdonar el maltrato?"
+      },
+      {
+        titulo: "Caso 3: La Amenaza Velada (El Revólver)",
+        desc: "Consigues una prueba/arma objetiva con la que puedes neutralizar al agresor. ¿Es mejor ejecutar una venganza/disparo inmediato, o mantener la amenaza en silencio para garantizar disuasión constante sin derramar sangre?"
+      }
+    ];
+
+    // Ultra-fast Polling for Vercel Serverless Sync
+    async function syncVercelState() {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const data = await res.json();
+          serverState = data;
+          updateUI();
+        }
+      } catch (e) {
+        console.warn("Syncing state with Vercel:", e);
+      }
+    }
+
+    // Poll every 1 second (1000ms) to ensure smooth real-time performance on Vercel
+    setInterval(syncVercelState, 1000);
+
+    function volverASeleccion() {
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.getElementById('box-role-select').style.display = 'block';
+    }
+
+    function entrarComoAdmin() {
+      isAdmin = true;
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.getElementById('box-admin-panel').style.display = 'block';
+      syncVercelState();
+    }
+
+    function entrarComoEquipo() {
+      isAdmin = false;
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+
+      if (myTeamId && serverState.joinedTeams[myTeamId] && serverState.joinedTeams[myTeamId].deviceId === myDeviceId) {
+        updateUI();
+      } else {
+        document.getElementById('box-team-login').style.display = 'block';
+      }
+    }
+
+    async function joinTeamServer() {
+      const teamId = document.getElementById('sel-team-id').value;
+      const voceroInput = document.getElementById('input-vocero-name');
+      const vocero = voceroInput ? voceroInput.value.trim() : '';
+      const errorBox = document.getElementById('join-error-box');
+
+      if (!vocero) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = 'Por favor ingresa el nombre del Vocero.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId, vocero, deviceId: myDeviceId })
+        });
+
+        const data = await res.json();
+
+        if (res.status === 409) {
+          errorBox.style.display = 'block';
+          errorBox.textContent = data.error || 'Este equipo ya fue tomado por otro dispositivo.';
+          return;
+        }
+
+        if (!res.ok) {
+          errorBox.style.display = 'block';
+          errorBox.textContent = data.error || 'Error al unirse al equipo.';
+          return;
+        }
+
+        errorBox.style.display = 'none';
+        myTeamId = teamId;
+        myVocero = vocero;
+        localStorage.setItem('revolver_team_id', teamId);
+        localStorage.setItem('revolver_vocero', vocero);
+
+        syncVercelState();
+      } catch (e) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = 'Error de conexión con el servidor.';
+      }
+    }
+
+    async function sendVoteServer(targetId) {
+      if (!myTeamId || serverState.revealDone) return;
+
+      try {
+        await fetch('/api/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teamId: myTeamId, targetId, deviceId: myDeviceId })
+        });
+        syncVercelState();
+      } catch (e) {
+        console.warn("Error enviando voto:", e);
+      }
+    }
+
+    async function adminStartGame() {
+      await fetch('/api/admin/start', { method: 'POST' });
+      syncVercelState();
+    }
+
+    async function adminRevealVotes() {
+      await fetch('/api/admin/reveal', { method: 'POST' });
+      syncVercelState();
+    }
+
+    async function adminNextCase() {
+      await fetch('/api/admin/next', { method: 'POST' });
+      syncVercelState();
+    }
+
+    async function adminResetLobby() {
+      if (confirm("¿Seguro que deseas reiniciar el juego y liberar todos los equipos?")) {
+        await fetch('/api/admin/reset', { method: 'POST' });
+        localStorage.removeItem('revolver_team_id');
+        localStorage.removeItem('revolver_vocero');
+        myTeamId = null;
+        myVocero = '';
+        syncVercelState();
+      }
+    }
+
+    function updateUI() {
+      // --- VISTA ADMIN ---
+      if (isAdmin) {
+        if (serverState.phase === 'lobby') {
+          document.getElementById('admin-phase-lobby').style.display = 'block';
+          document.getElementById('admin-phase-game').style.display = 'none';
+
+          const qrBox = document.getElementById('admin-qr-container');
+          const urlText = document.getElementById('admin-url-text');
+          const joinUrl = window.location.origin;
+
+          if (qrBox && window.QRComponent) {
+            qrBox.innerHTML = QRComponent.renderSVG(joinUrl, 180);
+          }
+          if (urlText) urlText.textContent = joinUrl;
+
+          const grid = document.getElementById('admin-lobby-grid');
+          let joinedCount = 0;
+          let gridHTML = '';
+
+          for (let i = 1; i <= 6; i++) {
+            const team = serverState.joinedTeams[String(i)];
+            if (team) {
+              joinedCount++;
+              gridHTML += `<div class="team-badge-lobby connected"><strong>Equipo ${i}</strong><br><span style="font-size:0.75rem;">Vocero: ${team.vocero}</span></div>`;
+            } else {
+              gridHTML += `<div class="team-badge-lobby" style="color:var(--text-muted);">Equipo ${i}<br><span style="font-size:0.75rem;">Disponible</span></div>`;
+            }
+          }
+          grid.innerHTML = gridHTML;
+
+          const btnStart = document.getElementById('btn-admin-start');
+          btnStart.textContent = `🚀 INICIAR ACTIVIDAD (${joinedCount}/6 EQUIPOS)`;
+          btnStart.disabled = joinedCount === 0;
+
+        } else {
+          document.getElementById('admin-phase-lobby').style.display = 'none';
+          document.getElementById('admin-phase-game').style.display = 'block';
+
+          const caso = casos[serverState.currentCaseIndex];
+          document.getElementById('admin-case-tag').innerText = `CASO ${serverState.currentCaseIndex + 1} DE 3`;
+          document.getElementById('admin-case-title').innerText = caso.titulo;
+          document.getElementById('admin-case-desc').innerText = caso.desc;
+
+          const resistenciaTeams = ["1", "2", "4", "5"];
+          let countVotes = 0;
+          resistenciaTeams.forEach(tid => {
+            if (serverState.votes[tid]) countVotes++;
+          });
+
+          document.getElementById('admin-votes-count').innerText = `${countVotes} / 4 Votos de Resistencia Recibidos`;
+
+          const btnReveal = document.getElementById('btn-admin-reveal');
+          const btnNext = document.getElementById('btn-admin-next');
+          const revealPanel = document.getElementById('admin-reveal-panel');
+
+          if (!serverState.revealDone) {
+            btnReveal.style.display = 'block';
+            btnNext.style.display = 'none';
+            revealPanel.innerHTML = '';
+          } else {
+            btnReveal.style.display = 'none';
+            btnNext.style.display = 'block';
+
+            let revealHTML = `
+              <div style="background:rgba(239,35,60,0.18); border:2px solid var(--accent-red); padding:14px; border-radius:12px; color:#ffccd5; text-align:left;">
+                <strong style="color:var(--accent-gold); font-size:1.05rem;">🎯 REVELACIÓN EN PANTALLA DE AULA:</strong><br><br>
+                🚨 <strong>INFILTRADOS DEL AULA:</strong> Equipos 3 y 6.<br><br>
+                📊 <strong>VOTOS EMITIDOS:</strong><br>
+            `;
+
+            resistenciaTeams.forEach(tid => {
+              const vTarget = serverState.votes[tid];
+              if (vTarget) {
+                const isAccurate = INFILTRADOS.includes(vTarget);
+                revealHTML += `<div>• Equipo ${tid} acusó al <strong>Equipo ${vTarget}</strong> ${isAccurate ? '🎯 (¡ACERTO!)' : '❌ (Fallo)'}</div>`;
+              } else {
+                revealHTML += `<div>• Equipo ${tid}: <em>Sin voto emitido</em></div>`;
+              }
+            });
+
+            revealHTML += `</div>`;
+            revealPanel.innerHTML = revealHTML;
+          }
+        }
+      }
+
+      // --- VISTA ESTUDIANTE ---
+      if (!isAdmin && myTeamId) {
+        document.getElementById('box-role-select').style.display = 'none';
+        document.getElementById('box-team-login').style.display = 'none';
+
+        if (serverState.phase === 'lobby') {
+          document.getElementById('box-team-waiting').style.display = 'block';
+          document.getElementById('box-team-game').style.display = 'none';
+          document.getElementById('client-team-label').innerText = `EQUIPO ${myTeamId} (Vocero: ${myVocero})`;
+        } else {
+          document.getElementById('box-team-waiting').style.display = 'none';
+          document.getElementById('box-team-game').style.display = 'block';
+
+          document.getElementById('client-header-title').innerText = `EQUIPO ${myTeamId} • VOCERO: ${myVocero.toUpperCase()}`;
+
+          const roleCard = document.getElementById('client-role-card');
+          const isImpostor = INFILTRADOS.includes(myTeamId);
+
+          if (isImpostor) {
+            const complice = myTeamId === "3" ? "Equipo 6" : "Equipo 3";
+            roleCard.className = 'role-card impostor';
+            roleCard.innerHTML = `<strong>🤫 ERES UN INFILTRADO (Cómplice del Agresor):</strong><br>
+            Defiende sutilmente al agresor en el debate.<br>👉 Tu cómplice es el <strong>${complice}</strong>.`;
+          } else {
+            roleCard.className = 'role-card aliado';
+            roleCard.innerHTML = `<strong>🛡️ ERES DE LA RESISTENCIA (Cero Tolerancia):</strong><br>
+            Defiende la autonomía. Hay 2 equipos infiltrados encubriendo al agresor.`;
+          }
+
+          const caso = casos[serverState.currentCaseIndex];
+          document.getElementById('client-case-tag').innerText = `CASO ${serverState.currentCaseIndex + 1} DE 3`;
+          document.getElementById('client-case-desc').innerText = caso.desc;
+
+          const voteWrapper = document.getElementById('client-vote-buttons');
+          const feedbackBox = document.getElementById('client-vote-feedback');
+
+          if (isImpostor) {
+            voteWrapper.innerHTML = `
+              <div style="background:rgba(239,35,60,0.12); border:1.5px dashed var(--accent-red); padding:14px; border-radius:12px; color:#ffccd5;">
+                <strong style="color:var(--accent-red);">🎭 MANTÉN EL CAMUFLAJE:</strong><br>
+                Como infiltrado, <strong>no puedes votar</strong> para no delatarte.<br><br>
+                👉 <strong>¡ACTÚEN!</strong> Finjan en su grupo que están analizando la pantalla y discutiendo a quién acusar para engañar al salón.
+              </div>
+            `;
+            feedbackBox.innerHTML = '';
+          } else {
+            let btnHTML = '';
+            const myVote = serverState.votes[myTeamId];
+
+            for (let i = 1; i <= 6; i++) {
+              if (String(i) !== myTeamId) {
+                const isSelected = myVote === String(i);
+                btnHTML += `
+                  <button class="btn-vote ${isSelected ? 'selected' : ''}" onclick="sendVoteServer('${i}')" ${serverState.revealDone ? 'disabled' : ''}>
+                    <span>Acusar al Equipo ${i}</span> <span>${isSelected ? '✅ Votado' : '🔍'}</span>
+                  </button>
+                `;
+              }
+            }
+            voteWrapper.innerHTML = btnHTML;
+
+            if (myVote && !serverState.revealDone) {
+              feedbackBox.innerHTML = `
+                <div class="waiting-box" style="margin-top:14px;">
+                  <div class="spin-pulse">🗳️</div>
+                  <div style="font-weight:bold; color:var(--accent-gold);">Voto Registrado para Equipo ${myVote}</div>
+                  <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">
+                    Esperando a que el Admin revele los resultados a toda la clase en el proyector...
+                  </p>
+                </div>
+              `;
+            } else if (myVote && serverState.revealDone) {
+              const isCorrect = INFILTRADOS.includes(myVote);
+              if (isCorrect) {
+                feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(6,214,160,0.15); border:1.5px solid var(--accent-green); color:var(--accent-green); margin-top:14px;">🎯 ¡ACERTASTE! El Equipo ${myVote} es un infiltrado del agresor.</div>`;
+              } else {
+                feedbackBox.innerHTML = `<div class="waiting-box" style="background:rgba(239,35,60,0.15); border:1.5px solid var(--accent-red); color:#ff85a1; margin-top:14px;">❌ FALLASTE: El Equipo ${myVote} era un aliado. Los infiltrados eran los Equipos 3 y 6.</div>`;
+              }
+            } else {
+              feedbackBox.innerHTML = '';
+            }
+          }
+        }
+      }
+    }
+
+    syncVercelState();
+  </script>
+</body>
+</html>
