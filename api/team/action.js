@@ -25,6 +25,16 @@ module.exports = async (req, res) => {
     return res.status(200).json({ success: true, gameState: newState });
   }
 
+  if (body.type === 'SHOW_RESULTS') {
+    const newState = {
+      ...currentState,
+      phase: 'results',
+      updatedAt: Date.now()
+    };
+    await saveRemoteState(newState);
+    return res.status(200).json({ success: true, gameState: newState });
+  }
+
   if (body.type === 'RESET_ALL') {
     const newState = {
       phase: 'waiting',

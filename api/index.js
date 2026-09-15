@@ -4,6 +4,7 @@ const app = express();
 const stateHandler = require('./state.js');
 const resetHandler = require('./admin/reset.js');
 const startHandler = require('./admin/start.js');
+const resultsHandler = require('./admin/results.js');
 const actionHandler = require('./team/action.js');
 
 app.use((req, res, next) => {
@@ -24,6 +25,9 @@ app.post('/admin/reset', resetHandler);
 
 app.post('/api/admin/start', startHandler);
 app.post('/admin/start', startHandler);
+
+app.post('/api/admin/results', resultsHandler);
+app.post('/admin/results', resultsHandler);
 
 app.post('/api/team/action', actionHandler);
 app.post('/team/action', actionHandler);
